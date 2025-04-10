@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Permissions-Policy" content="interest-cohort=()">
+    <title>teste Câmera</title>
+
+    <style>
+        canvas {
+            /* width: 100%;
+            object-fit: contain; */
+            border: solid 1px blue;
+        }
+
+        video {
+            border: solid 1px blue;
+            width: 100%;
+            object-fit: contain;
+        }
+    </style>
+</head>
+
+<body>
+
+    <button id="start-camera">Start Camera</button>
+    <div id="content-cameras" style="display: none;">
+        Cameras Disponiveis
+    </div>
+    <video id="video" autoplay playsinline></video>
+    <button id="click-photo">Click Photo</button>
+    <canvas id="canvas" style="display: none;"></canvas>
+
+    <script>
+        const DEVICE_TYPE_CAMERA = "videoinput";
+
+        let camera_button = document.querySelector("#start-camera");
+        let video = document.querySelector("#video");
+        let click_button = document.querySelector("#click-photo");
+        let canvas = document.querySelector("#canvas");
+        let containerCameraOptions = document.getElementById("content-cameras");
+
+        camera_button.addEventListener('click', async function () {
+            canvas.style.display = "none";
+            video.style.display = "";
+
+            // camera Default
+            let videoSetting = {
+                facingMode: "user",
+                width: { min: 1280, max: 1920 },//1280 ideal: 1920
+                height: { min: 720, max: 1080 }//720 ideal: 1080
+            }
+            navigator.mediaDevices.getUserMedia({
+                video: videoSetting, audio: false
+            })
+                .then((mediaStream) => {
+
+                    video.srcObject = mediaStream;
+                    enableMultiplesCameras();
+                })
+                .catch((error) => {
+                    console.log(error);
+                });
+        });
+
+        click_button.addEventListener('click', () => {
+
+            canvas.width = video.offsetWidth;//video.width;
+            canvas.height = video.offsetHeight;//video.height;
+
+            video.style.display = "none";
+            canvas.style.display = "";
+
+            console.log(`Resolucao canvas w: ${canvas.width} - h: ${canvas.height}`);
+            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+            let image_data_url = canvas.toDataURL('image/png');
+
+			let link = document.createElement('a');
+			link.download = 'image.png';
+			link.href = image_data_url;
+			link.textContent = 'Download Image';
+			document.body.appendChild(link);
+        });
+
+        async function enableMultiplesCameras() {
+            let cameras = await navigator.mediaDevices.enumerateDevices();
+
+            let camButtons = "";
+            cameras.forEach((cam) => {
+                if (cam.kind == DEVICE_TYPE_CAMERA) {
+                    camButtons += `<button onclick="changeCamera('${cam.deviceId}')">${cam.label}</button>`;
+                }
+            });
+
+            containerCameraOptions.innerHTML = camButtons;
+
+            cameras = cameras.filter((cam) => {
+                return cam.kind == DEVICE_TYPE_CAMERA;
+            });
+
+            if (cameras.length > 1) {
+                containerCameraOptions.style.display = "";
+            }
+        }
+
+        async function changeCamera(deviceCamId) {
+
+            video.srcObject.getTracks().forEach(track => {
+                if (track != undefined) {
+                    console.log('Parando camera aberta');
+                    track.stop();
+                }
+            });
+
+            video.srcObject = null;
+
+            let videoSetting = {
+                deviceId: { exact: deviceCamId },
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            };
+
+            navigator.mediaDevices.getUserMedia({ video: videoSetting, audio: false })
+                .then((mediaStream) => {
+                    video.srcObject = mediaStream;
+                })
+                .catch((error) => {
+                    console.log(error);
+                });
+        }
+
+    </script>
+
+</body>
+
+</html>
