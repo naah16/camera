@@ -10,8 +10,6 @@
 
     <style>
         canvas {
-            /* width: 100%;
-            object-fit: contain; */
             border: solid 1px blue;
         }
 
@@ -20,6 +18,18 @@
             width: 100%;
             object-fit: contain;
         }
+
+        .controls {
+            margin-top: 10px;
+        }
+
+        #zoom-control {
+            display: none;
+        }
+
+        #flash-button {
+            display: none;
+        }
     </style>
 </head>
 
@@ -27,10 +37,19 @@
 
     <button id="start-camera">Start Camera</button>
     <div id="content-cameras" style="display: none;">
-        Cameras Disponiveis
+        Cameras Disponíveis
     </div>
+
     <video id="video" autoplay playsinline></video>
-    <button id="click-photo">Click Photo</button>
+
+    <div class="controls">
+        <button id="click-photo">Click Photo</button>
+        <button id="flash-button">Ligar Flash</button>
+        <div id="zoom-control">
+            Zoom: <input type="range" id="zoom-slider" min="1" max="1" step="0.1" value="1">
+        </div>
+    </div>
+
     <canvas id="canvas" style="display: none;"></canvas>
 
     <script>
@@ -41,53 +60,55 @@
         let click_button = document.querySelector("#click-photo");
         let canvas = document.querySelector("#canvas");
         let containerCameraOptions = document.getElementById("content-cameras");
+        let flashButton = document.getElementById("flash-button");
+        let zoomSlider = document.getElementById("zoom-slider");
+        let zoomControl = document.getElementById("zoom-control");
+
+        let currentTrack = null;
+        let torchEnabled = false;
 
         camera_button.addEventListener('click', async function () {
             canvas.style.display = "none";
             video.style.display = "";
 
-            // camera Default
             let videoSetting = {
                 facingMode: "user",
-                width: { min: 1280, max: 1920 },//1280 ideal: 1920
-                height: { min: 720, max: 1080 }//720 ideal: 1080
-            }
-            navigator.mediaDevices.getUserMedia({
-                video: videoSetting, audio: false
-            })
-                .then((mediaStream) => {
+                width: { min: 1280, max: 1920 },
+                height: { min: 720, max: 1080 }
+            };
 
-                    video.srcObject = mediaStream;
-                    enableMultiplesCameras();
-                })
-                .catch((error) => {
-                    console.log(error);
-                });
+            try {
+                let stream = await navigator.mediaDevices.getUserMedia({ video: videoSetting, audio: false });
+                video.srcObject = stream;
+                currentTrack = stream.getVideoTracks()[0];
+                handleCameraCapabilities(currentTrack);
+                enableMultiplesCameras();
+            } catch (error) {
+                console.error("Erro ao acessar a câmera:", error);
+            }
         });
 
         click_button.addEventListener('click', () => {
-
-            canvas.width = video.offsetWidth;//video.width;
-            canvas.height = video.offsetHeight;//video.height;
+            canvas.width = video.offsetWidth;
+            canvas.height = video.offsetHeight;
 
             video.style.display = "none";
             canvas.style.display = "";
 
-            console.log(`Resolucao canvas w: ${canvas.width} - h: ${canvas.height}`);
             canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
             let image_data_url = canvas.toDataURL('image/png');
 
-			let link = document.createElement('a');
-			link.download = 'image.png';
-			link.href = image_data_url;
-			link.textContent = 'Download Image';
-			document.body.appendChild(link);
+            let link = document.createElement('a');
+            link.download = 'image.png';
+            link.href = image_data_url;
+            link.textContent = 'Download Image';
+            document.body.appendChild(link);
         });
 
         async function enableMultiplesCameras() {
             let cameras = await navigator.mediaDevices.enumerateDevices();
-
             let camButtons = "";
+
             cameras.forEach((cam) => {
                 if (cam.kind == DEVICE_TYPE_CAMERA) {
                     camButtons += `<button onclick="changeCamera('${cam.deviceId}')">${cam.label}</button>`;
@@ -95,26 +116,16 @@
             });
 
             containerCameraOptions.innerHTML = camButtons;
-
-            cameras = cameras.filter((cam) => {
-                return cam.kind == DEVICE_TYPE_CAMERA;
-            });
-
-            if (cameras.length > 1) {
+            if (cameras.filter(c => c.kind == DEVICE_TYPE_CAMERA).length > 1) {
                 containerCameraOptions.style.display = "";
             }
         }
 
         async function changeCamera(deviceCamId) {
-
-            video.srcObject.getTracks().forEach(track => {
-                if (track != undefined) {
-                    console.log('Parando camera aberta');
-                    track.stop();
-                }
-            });
-
-            video.srcObject = null;
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
+            }
 
             let videoSetting = {
                 deviceId: { exact: deviceCamId },
@@ -122,17 +133,47 @@
                 height: { ideal: 720 }
             };
 
-            navigator.mediaDevices.getUserMedia({ video: videoSetting, audio: false })
-                .then((mediaStream) => {
-                    video.srcObject = mediaStream;
-                })
-                .catch((error) => {
-                    console.log(error);
-                });
+            try {
+                let stream = await navigator.mediaDevices.getUserMedia({ video: videoSetting, audio: false });
+                video.srcObject = stream;
+                currentTrack = stream.getVideoTracks()[0];
+                handleCameraCapabilities(currentTrack);
+            } catch (error) {
+                console.error(error);
+            }
         }
 
-    </script>
+        function handleCameraCapabilities(track) {
+            const capabilities = track.getCapabilities();
 
+            // Torch (flash)
+            if (capabilities.torch) {
+                flashButton.style.display = "inline-block";
+                flashButton.onclick = () => {
+                    torchEnabled = !torchEnabled;
+                    track.applyConstraints({ advanced: [{ torch: torchEnabled }] });
+                    flashButton.textContent = torchEnabled ? "Desligar Flash" : "Ligar Flash";
+                };
+            } else {
+                flashButton.style.display = "none";
+            }
+
+            // Zoom
+            if (capabilities.zoom) {
+                zoomControl.style.display = "block";
+                zoomSlider.min = capabilities.zoom.min;
+                zoomSlider.max = capabilities.zoom.max;
+                zoomSlider.step = capabilities.zoom.step || 0.1;
+                zoomSlider.value = capabilities.zoom.min;
+
+                zoomSlider.oninput = () => {
+                    track.applyConstraints({ advanced: [{ zoom: parseFloat(zoomSlider.value) }] });
+                };
+            } else {
+                zoomControl.style.display = "none";
+            }
+        }
+    </script>
 </body>
 
 </html>
