@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Câmera</title>
+	<link rel="stylesheet" href="./css/style.css" />
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+
+<body>
+	<div class="camera-container">
+		<div class="camera-body">
+			<div class="viewfinder-container">
+				<video id="video" autoplay playsinline></video>
+				<canvas id="photo-canvas"  style="display: none;"></canvas>
+
+				<!-- Camera grid overlay -->
+				<div class="camera-grid">
+					<div class="grid-line horizontal" style="top: 33.3%"></div>
+					<div class="grid-line horizontal" style="top: 66.6%"></div>
+					<div class="grid-line vertical" style="left: 33.3%"></div>
+					<div class="grid-line vertical" style="left: 66.6%"></div>
+				</div>
+
+				<!-- Camera info overlay -->
+				<div class="camera-info top-left">HD 1080p</div>
+				<div class="camera-info top-right"><span class="recording-dot"></span> REC</div>
+				<div class="camera-info bottom-left" id="filter-info">Filter: Normal</div>
+
+				<!-- Flash effect overlay -->
+				<div id="flash-effect"></div>
+
+				<!-- Start camera button -->
+				<div id="start-camera-container">
+					<button id="start-camera-btn">Iniciar câmera</button>
+					<p class="permission-note">É necessário acesso à câmera. Conceda as permissões quando solicitado.</p>
+				</div>
+			</div>
+
+			<div class="camera-controls">
+				<div class="primary-controls">
+					<button id="flash-btn" class="control-btn">
+						<svg class="icon" id="flash-icon" viewBox="0 0 24 24" width="24" height="24"
+							stroke="currentColor" stroke-width="2" fill="none">
+							<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+						</svg>
+					</button>
+
+					<button id="shutter-btn" class="shutter-btn">
+						<div class="shutter-inner"></div>
+					</button>
+
+					<button id="switch-cam-btn" class="control-btn">
+						<i class="fas fa-sync-alt"></i>
+					</button>
+				</div>
+
+				<div class="secondary-controls">
+					<button id="filters-btn" class="control-btn">
+						<svg class="icon" viewBox="0 0 24 24" width="24" height="24" stroke="currentColor"
+							stroke-width="2" fill="none">
+							<line x1="4" y1="21" x2="4" y2="14"></line>
+							<line x1="4" y1="10" x2="4" y2="3"></line>
+							<line x1="12" y1="21" x2="12" y2="12"></line>
+							<line x1="12" y1="8" x2="12" y2="3"></line>
+							<line x1="20" y1="21" x2="20" y2="16"></line>
+							<line x1="20" y1="12" x2="20" y2="3"></line>
+							<line x1="1" y1="14" x2="7" y2="14"></line>
+							<line x1="9" y1="8" x2="15" y2="8"></line>
+							<line x1="17" y1="16" x2="23" y2="16"></line>
+						</svg>
+					</button>
+
+					<div class="zoom-control">
+						<input type="range" id="zoom-slider" min="1" max="3" step="0.1" value="1">
+						<div class="zoom-level" id="zoom-level">1.0x zoom</div>
+					</div>
+
+					<button id="reset-btn" class="control-btn">
+						<svg class="icon" viewBox="0 0 24 24" width="24" height="24" stroke="currentColor"
+							stroke-width="2" fill="none">
+							<path d="M1 4v6h6"></path>
+							<path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+						</svg>
+					</button>
+				</div>
+			</div>
+
+			<!-- Filters panel -->
+			<div id="filters-panel" class="filters-panel hidden">
+				<div class="filters-grid">
+					<button class="filter-btn active" data-filter="none">Normal</button>
+					<button class="filter-btn" data-filter="grayscale(100%)">PB</button>
+					<button class="filter-btn" data-filter="sepia(100%)">Sépia</button>
+					<button class="filter-btn" data-filter="invert(100%)">Inverter</button>
+					<button class="filter-btn" data-filter="blur(5px)">Desfoque</button>
+					<button class="filter-btn" data-filter="sepia(50%) contrast(120%) saturate(90%)">Vintage</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		let currentStream;
+		let currentDeviceId = null;
+		let zoom = 1;
+		let capturedImage;
+
+		const cameraFeed = document.getElementById('video');
+		const photoCanvas = document.getElementById('photo-canvas');
+		const startCameraBtn = document.getElementById('start-camera-btn');
+		const startCameraContainer = document.getElementById('start-camera-container');
+		const shutterBtn = document.getElementById('shutter-btn');
+		const flashEffect = document.getElementById('flash-effect');
+		const zoomSlider = document.getElementById('zoom-slider');
+		const zoomLevel = document.getElementById('zoom-level');
+		const resetBtn = document.getElementById('reset-btn');
+		// const filterSelect = document.querySelector('select#filter');
+		const filterInfo = document.getElementById('filter-info');
+		const filterBtns = document.querySelectorAll('.filter-btn');
+		const switchCamBtn = document.getElementById('switch-cam-btn');
+
+		const constraints = {
+			video: {
+				facingMode: 'environment'
+			},
+			audio: false
+		};
+
+		async function getCameraStream(deviceId = null) {
+			if (currentStream) {
+				currentStream.getTracks().forEach(track => track.stop());
+			}
+
+			let newConstraints = { video: { facingMode: 'environment' }, audio: false };
+			if (deviceId) {
+				newConstraints.video.deviceId = { exact: deviceId };
+			}
+
+			try {
+				const stream = await navigator.mediaDevices.getUserMedia(newConstraints);
+				currentStream = stream;
+				cameraFeed.srcObject = stream;
+
+				const videoTrack = stream.getVideoTracks()[0];
+				currentDeviceId = videoTrack.getSettings().deviceId || null;
+			} catch (err) {
+				alert('Erro ao acessar a câmera: ' + err.message);
+			}
+		}
+
+		startCameraBtn.addEventListener('click', async () => {
+			await getCameraStream();
+			startCameraContainer.style.display = 'none';
+		});
+
+		shutterBtn.addEventListener('click', () => {
+			photoCanvas.width = cameraFeed.offsetWidth;
+            photoCanvas.height = cameraFeed.offsetHeight;
+			//se tiver filtro aplicado, desenha a imagem com o filtro
+			if (cameraFeed.style.filter) {
+				photoCanvas.style.filter = cameraFeed.style.filter;
+			}
+
+            cameraFeed.style.display = "none";
+            photoCanvas.style.display = "";
+
+            photoCanvas.getContext('2d').drawImage(cameraFeed, 0, 0, photoCanvas.width, photoCanvas.height);
+		});
+
+		zoomSlider.addEventListener('input', () => {
+			zoom = parseFloat(zoomSlider.value);
+			cameraFeed.style.transform = `scale(${zoom})`;
+			zoomLevel.textContent = `${zoom.toFixed(1)}x zoom`;
+		});
+
+		resetBtn.addEventListener('click', () => {
+			zoom = 1;
+			zoomSlider.value = 1;
+			cameraFeed.style.transform = 'scale(1)';
+			zoomLevel.textContent = '1.0x zoom';
+			cameraFeed.style.filter = 'none';
+			filterInfo.textContent = 'Filter: Normal';
+			filterBtns.forEach(btn => btn.classList.remove('active'));
+			filterBtns[0].classList.add('active');
+		});
+
+		//Filter buttons
+		filterBtns.forEach(btn => {
+			btn.addEventListener('click', () => {
+				const filter = btn.dataset.filter;
+				cameraFeed.style.filter = filter;
+				filterInfo.textContent = `Filter: ${btn.textContent}`;
+				filterBtns.forEach(b => b.classList.remove('active'));
+				btn.classList.add('active');
+			});
+		});
+
+		// Listar câmeras disponíveis e alternar entre elas
+		async function listCameras() {
+			const devices = await navigator.mediaDevices.enumerateDevices();
+			return devices.filter(device => device.kind === 'videoinput');
+		}
+
+		switchCamBtn.addEventListener('click', async () => {
+			const cameras = await listCameras();
+			if (cameras.length <= 1) return;
+
+			const currentIndex = cameras.findIndex(c => c.deviceId === currentDeviceId);
+			const nextIndex = (currentIndex + 1) % cameras.length;
+			await getCameraStream(cameras[nextIndex].deviceId);
+		});
+
+
+	</script>
+</body>
+
+</html>
