@@ -44,6 +44,13 @@ async function getCameraStream(deviceId = null) {
 		const videoTrack = stream.getVideoTracks()[0];
 		currentDeviceId = videoTrack.getSettings().deviceId || null;
 
+    const settings = videoTrack.getSettings();
+    if (settings.facingMode === 'user') {
+      cameraFeed.style.transform = 'scaleX(-1)';
+    } else {
+      cameraFeed.style.transform = 'scaleX(1)';
+    }
+
 		handleCameraCapabilities(videoTrack);
 	} catch (err) {
 		alert('Erro ao acessar a câmera: ' + err.message);
@@ -110,14 +117,24 @@ function createActionButtons() {
 }
 
 function capturePhoto() {
-	photoCanvas.width = cameraFeed.offsetWidth;
-	photoCanvas.height = cameraFeed.offsetHeight;
+	const videoWidth = cameraFeed.videoWidth;
+	const videoHeight = cameraFeed.videoHeight;
+
+	photoCanvas.width = videoWidth;
+	photoCanvas.height = videoHeight;
 
 	const ctx = photoCanvas.getContext('2d');
+
 	if (cameraFeed.style.filter) {
-		photoCanvas.style.filter = cameraFeed.style.filter;
+		ctx.filter = cameraFeed.style.filter;
 	}
-	ctx.drawImage(cameraFeed, 0, 0, photoCanvas.width, photoCanvas.height);
+
+	if (cameraFeed.style.transform === 'scaleX(-1)') {
+		ctx.translate(videoWidth, 0);
+		ctx.scale(-1, 1);
+	}
+
+	ctx.drawImage(cameraFeed, 0, 0, videoWidth, videoHeight);
 
 	cameraFeed.style.display = "none";
 	photoCanvas.style.display = "block";
