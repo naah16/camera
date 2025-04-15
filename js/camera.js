@@ -134,7 +134,7 @@ function capturePhoto() {
 		ctx.scale(-1, 1);
 	}
 
-	ctx.drawImage(cameraFeed, 0, 0, videoWidth, videoHeight);
+	ctx.drawImage(cameraFeed, 0, 0, photoCanvas.width, photoCanvas.height);
 
 	cameraFeed.style.display = "none";
 	photoCanvas.style.display = "block";

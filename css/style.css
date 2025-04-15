@@ -19,6 +19,12 @@ body {
   justify-content: center;
 }
 
+canvas {
+  width: auto;
+  height: auto;
+  display: block;
+}
+
 /* Camera container */
 .camera-container {
   width: 100%;
