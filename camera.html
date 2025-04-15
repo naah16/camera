@@ -13,16 +13,16 @@
 	<div class="camera-container">
 		<div class="camera-body">
 			<div class="viewfinder-container">
-				<video id="video" autoplay playsinline></video>
+				<video id="video" autoplay playsinline style="width: auto;height: -webkit-fill-available;"></video>
 				<canvas id="photo-canvas"  style="display: none;"></canvas>
 
 				<!-- Camera grid overlay -->
-				<div class="camera-grid">
+				<!-- <div class="camera-grid">
 					<div class="grid-line horizontal" style="top: 33.3%"></div>
 					<div class="grid-line horizontal" style="top: 66.6%"></div>
 					<div class="grid-line vertical" style="left: 33.3%"></div>
 					<div class="grid-line vertical" style="left: 66.6%"></div>
-				</div>
+				</div> -->
 
 				<!-- Camera info overlay -->
 				<div class="camera-info top-left">HD 1080p</div>
@@ -107,6 +107,7 @@
 		let currentDeviceId = null;
 		let zoom = 1;
 		let capturedImage;
+		let torchEnabled = false;
 
 		const cameraFeed = document.getElementById('video');
 		const photoCanvas = document.getElementById('photo-canvas');
@@ -114,6 +115,7 @@
 		const startCameraContainer = document.getElementById('start-camera-container');
 		const shutterBtn = document.getElementById('shutter-btn');
 		const flashEffect = document.getElementById('flash-effect');
+		const flashBtn = document.getElementById('flash-btn');
 		const zoomSlider = document.getElementById('zoom-slider');
 		const zoomLevel = document.getElementById('zoom-level');
 		const resetBtn = document.getElementById('reset-btn');
@@ -122,9 +124,10 @@
 		const filterBtns = document.querySelectorAll('.filter-btn');
 		const switchCamBtn = document.getElementById('switch-cam-btn');
 
-		const constraints = {
+		const constraints = window.constraints = {
 			video: {
-				facingMode: 'environment'
+				facingMode: 'environment',
+				pan: true, zoom: true, tilt: true,
 			},
 			audio: false
 		};
@@ -196,6 +199,31 @@
 				filterBtns.forEach(b => b.classList.remove('active'));
 				btn.classList.add('active');
 			});
+		});
+
+		//ligar flash
+		flashBtn.addEventListener('click', () => {
+			if (flashEffect.style.display === 'block') {
+				flashEffect.style.display = 'none';
+				flashBtn.classList.remove('active');
+				if (torchEnabled) {
+					torchEnabled = false;
+					flashEffect.classList.remove('flash-on');
+					currentStream.getVideoTracks()[0].applyConstraints({ advanced: [{ torch: false }] });
+				} else {
+					torchEnabled = true;
+					flashEffect.classList.add('flash-on');
+					currentStream.getVideoTracks()[0].applyConstraints({ advanced: [{ torch: true }] });
+				}
+			} else {
+				flashEffect.style.display = 'block';
+				flashEffect.classList.add('flash-on');
+				setTimeout(() => {
+					flashEffect.classList.remove('flash-on');
+					flashEffect.style.display = 'none';
+				}, 100);
+				flashBtn.classList.add('active');
+			}
 		});
 
 		// Listar câmeras disponíveis e alternar entre elas
