@@ -24,6 +24,8 @@ const constraints = {
 	video: {
 		facingMode: 'environment',
 		pan: true, zoom: true, tilt: true,
+    width: { min: 1280, max: 1920 },
+    height: { min: 720, max: 1080 }, 
 	},
 	audio: false
 };
@@ -59,6 +61,8 @@ async function getCameraStream(deviceId = null) {
 
 function handleCameraCapabilities(track) {
 	const capabilities = track.getCapabilities();
+  console.log('Capacidades da câmera:', capabilities);
+
 	if (capabilities.zoom) {
 		flashBtn.onclick = () => {
 			torchEnabled = !torchEnabled;
@@ -66,6 +70,10 @@ function handleCameraCapabilities(track) {
 			flashEffect.style.display = torchEnabled ? 'block' : 'none';
 			flashBtn.classList.toggle("active", torchEnabled);
 		};
+
+    if (capabilities.width && capabilities.height) {
+      console.log(`Resolução máxima: ${capabilities.width.max}x${capabilities.height.max}`);
+  }
 	}
 }
 
@@ -152,7 +160,7 @@ function saveImage() {
 		document.body.appendChild(a);
 		a.click();
 		document.body.removeChild(a);
-	}, 'image/png');
+	}, 'image/png', 1.0);
 }
 
 // === EVENTOS PRINCIPAIS ===

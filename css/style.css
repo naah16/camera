@@ -19,10 +19,8 @@ body {
   justify-content: center;
 }
 
-canvas {
-  width: auto;
-  height: auto;
-  display: block;
+video {
+  object-fit: cover;
 }
 
 /* Camera container */
