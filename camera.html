@@ -149,6 +149,8 @@
 
 				const videoTrack = stream.getVideoTracks()[0];
 				currentDeviceId = videoTrack.getSettings().deviceId || null;
+
+				handleCameraCapabilities(videoTrack);
 			} catch (err) {
 				alert('Erro ao acessar a câmera: ' + err.message);
 			}
@@ -169,6 +171,18 @@
 
             cameraFeed.style.display = "none";
             photoCanvas.style.display = "";
+
+			//adicionar um botão para limpar a imagem
+			const clearBtn = document.createElement('button');
+			clearBtn.innerHTML = '<i class="fas fa-times" style="margin-left: 10px; font-size: 25px;"></i>';
+			clearBtn.classList.add('close-btn');
+			clearBtn.addEventListener('click', () => {
+				photoCanvas.style.display = 'none';
+				cameraFeed.style.display = 'block';
+				clearBtn.remove();
+			});
+			const cameraInfoTopRight = document.querySelector('.camera-info.top-right');
+			cameraInfoTopRight.appendChild(clearBtn);
 
             photoCanvas.getContext('2d').drawImage(cameraFeed, 0, 0, photoCanvas.width, photoCanvas.height);
 		});
@@ -201,30 +215,20 @@
 			});
 		});
 
-		//ligar flash
-		flashBtn.addEventListener('click', () => {
-			if (flashEffect.style.display === 'block') {
-				flashEffect.style.display = 'none';
-				flashBtn.classList.remove('active');
-				if (torchEnabled) {
-					torchEnabled = false;
-					flashEffect.classList.remove('flash-on');
-					currentStream.getVideoTracks()[0].applyConstraints({ advanced: [{ torch: false }] });
-				} else {
-					torchEnabled = true;
-					flashEffect.classList.add('flash-on');
-					currentStream.getVideoTracks()[0].applyConstraints({ advanced: [{ torch: true }] });
-				}
+		function handleCameraCapabilities(track) {
+            const capabilities = track.getCapabilities();
+
+			if (capabilities.zoom) {
+				flashBtn.onclick = () => {
+					torchEnabled = !torchEnabled;
+					track.applyConstraints({ advanced: [{ torch: torchEnabled }] });
+					flashEffect.style.display = torchEnabled ? 'block' : 'none';
+					flashBtn.classList.toggle("active", torchEnabled);
+				};
 			} else {
-				flashEffect.style.display = 'block';
-				flashEffect.classList.add('flash-on');
-				setTimeout(() => {
-					flashEffect.classList.remove('flash-on');
-					flashEffect.style.display = 'none';
-				}, 100);
-				flashBtn.classList.add('active');
+				flashBtn.style.display = 'none';
 			}
-		});
+		}
 
 		// Listar câmeras disponíveis e alternar entre elas
 		async function listCameras() {
