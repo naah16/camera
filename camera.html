@@ -14,19 +14,15 @@
 		<div class="camera-body">
 			<div class="viewfinder-container">
 				<video id="video" autoplay playsinline style="width: auto;height: -webkit-fill-available;"></video>
-				<canvas id="photo-canvas"  style="display: none;"></canvas>
-
-				<!-- Camera grid overlay -->
-				<!-- <div class="camera-grid">
-					<div class="grid-line horizontal" style="top: 33.3%"></div>
-					<div class="grid-line horizontal" style="top: 66.6%"></div>
-					<div class="grid-line vertical" style="left: 33.3%"></div>
-					<div class="grid-line vertical" style="left: 66.6%"></div>
-				</div> -->
+				<canvas id="photo-canvas"  style="display: none;width: auto;"></canvas>
 
 				<!-- Camera info overlay -->
 				<div class="camera-info top-left">HD 1080p</div>
 				<div class="camera-info top-right"><span class="recording-dot"></span> REC</div>
+				<div class="camera-info top-right">
+					<div class="btn-close"></div>
+					<div class="btn-download"></div>
+				</div>
 				<div class="camera-info bottom-left" id="filter-info">Filter: Normal</div>
 
 				<!-- Flash effect overlay -->
@@ -53,7 +49,7 @@
 					</button>
 
 					<button id="switch-cam-btn" class="control-btn">
-						<i class="fas fa-sync-alt"></i>
+						<i class="fas fa-sync-alt" style="font-size: 20px;"></i>
 					</button>
 				</div>
 
@@ -102,151 +98,7 @@
 		</div>
 	</div>
 
-	<script>
-		let currentStream;
-		let currentDeviceId = null;
-		let zoom = 1;
-		let capturedImage;
-		let torchEnabled = false;
-
-		const cameraFeed = document.getElementById('video');
-		const photoCanvas = document.getElementById('photo-canvas');
-		const startCameraBtn = document.getElementById('start-camera-btn');
-		const startCameraContainer = document.getElementById('start-camera-container');
-		const shutterBtn = document.getElementById('shutter-btn');
-		const flashEffect = document.getElementById('flash-effect');
-		const flashBtn = document.getElementById('flash-btn');
-		const zoomSlider = document.getElementById('zoom-slider');
-		const zoomLevel = document.getElementById('zoom-level');
-		const resetBtn = document.getElementById('reset-btn');
-		// const filterSelect = document.querySelector('select#filter');
-		const filterInfo = document.getElementById('filter-info');
-		const filterBtns = document.querySelectorAll('.filter-btn');
-		const switchCamBtn = document.getElementById('switch-cam-btn');
-
-		const constraints = window.constraints = {
-			video: {
-				facingMode: 'environment',
-				pan: true, zoom: true, tilt: true,
-			},
-			audio: false
-		};
-
-		async function getCameraStream(deviceId = null) {
-			if (currentStream) {
-				currentStream.getTracks().forEach(track => track.stop());
-			}
-
-			let newConstraints = { video: { facingMode: 'environment' }, audio: false };
-			if (deviceId) {
-				newConstraints.video.deviceId = { exact: deviceId };
-			}
-
-			try {
-				const stream = await navigator.mediaDevices.getUserMedia(newConstraints);
-				currentStream = stream;
-				cameraFeed.srcObject = stream;
-
-				const videoTrack = stream.getVideoTracks()[0];
-				currentDeviceId = videoTrack.getSettings().deviceId || null;
-
-				handleCameraCapabilities(videoTrack);
-			} catch (err) {
-				alert('Erro ao acessar a câmera: ' + err.message);
-			}
-		}
-
-		startCameraBtn.addEventListener('click', async () => {
-			await getCameraStream();
-			startCameraContainer.style.display = 'none';
-		});
-
-		shutterBtn.addEventListener('click', () => {
-			photoCanvas.width = cameraFeed.offsetWidth;
-            photoCanvas.height = cameraFeed.offsetHeight;
-			//se tiver filtro aplicado, desenha a imagem com o filtro
-			if (cameraFeed.style.filter) {
-				photoCanvas.style.filter = cameraFeed.style.filter;
-			}
-
-            cameraFeed.style.display = "none";
-            photoCanvas.style.display = "";
-
-			//adicionar um botão para limpar a imagem
-			const clearBtn = document.createElement('button');
-			clearBtn.innerHTML = '<i class="fas fa-times" style="margin-left: 10px; font-size: 25px;"></i>';
-			clearBtn.classList.add('close-btn');
-			clearBtn.addEventListener('click', () => {
-				photoCanvas.style.display = 'none';
-				cameraFeed.style.display = 'block';
-				clearBtn.remove();
-			});
-			const cameraInfoTopRight = document.querySelector('.camera-info.top-right');
-			cameraInfoTopRight.appendChild(clearBtn);
-
-            photoCanvas.getContext('2d').drawImage(cameraFeed, 0, 0, photoCanvas.width, photoCanvas.height);
-		});
-
-		zoomSlider.addEventListener('input', () => {
-			zoom = parseFloat(zoomSlider.value);
-			cameraFeed.style.transform = `scale(${zoom})`;
-			zoomLevel.textContent = `${zoom.toFixed(1)}x zoom`;
-		});
-
-		resetBtn.addEventListener('click', () => {
-			zoom = 1;
-			zoomSlider.value = 1;
-			cameraFeed.style.transform = 'scale(1)';
-			zoomLevel.textContent = '1.0x zoom';
-			cameraFeed.style.filter = 'none';
-			filterInfo.textContent = 'Filter: Normal';
-			filterBtns.forEach(btn => btn.classList.remove('active'));
-			filterBtns[0].classList.add('active');
-		});
-
-		//Filter buttons
-		filterBtns.forEach(btn => {
-			btn.addEventListener('click', () => {
-				const filter = btn.dataset.filter;
-				cameraFeed.style.filter = filter;
-				filterInfo.textContent = `Filter: ${btn.textContent}`;
-				filterBtns.forEach(b => b.classList.remove('active'));
-				btn.classList.add('active');
-			});
-		});
-
-		function handleCameraCapabilities(track) {
-            const capabilities = track.getCapabilities();
-
-			if (capabilities.zoom) {
-				flashBtn.onclick = () => {
-					torchEnabled = !torchEnabled;
-					track.applyConstraints({ advanced: [{ torch: torchEnabled }] });
-					flashEffect.style.display = torchEnabled ? 'block' : 'none';
-					flashBtn.classList.toggle("active", torchEnabled);
-				};
-			} else {
-				flashBtn.style.display = 'none';
-			}
-		}
-
-		// Listar câmeras disponíveis e alternar entre elas
-		async function listCameras() {
-			const devices = await navigator.mediaDevices.enumerateDevices();
-			return devices.filter(device => device.kind === 'videoinput');
-		}
-
-		switchCamBtn.addEventListener('click', async () => {
-			const cameras = await listCameras();
-			if (cameras.length <= 1) return;
-
-			const currentIndex = cameras.findIndex(c => c.deviceId === currentDeviceId);
-			const nextIndex = (currentIndex + 1) % cameras.length;
-			await getCameraStream(cameras[nextIndex].deviceId);
-		});
-
-
-	</script>
+	<script src="js/camera.js" defer></script>
 </body>
 
 </html>
