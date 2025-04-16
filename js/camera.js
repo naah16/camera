@@ -151,16 +151,39 @@ function capturePhoto() {
 	createActionButtons();
 }
 
-function saveImage() {
-	photoCanvas.toBlob((blob) => {
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = 'captured-image.png';
-		document.body.appendChild(a);
-		a.click();
-		document.body.removeChild(a);
-	}, 'image/png', 1.0);
+async function saveImage() {
+	// photoCanvas.toBlob((blob) => {
+	// 	const url = URL.createObjectURL(blob);
+	// 	const a = document.createElement('a');
+	// 	a.href = url;
+	// 	a.download = 'captured-image.png';
+	// 	document.body.appendChild(a);
+	// 	a.click();
+	// 	document.body.removeChild(a);
+	// }, 'image/png', 1.0);
+	const newConstraints = {
+		video: { deviceId: { exact: currentDeviceId } },
+		audio: false
+	};
+	try {
+		const stream = await navigator.mediaDevices.getUserMedia(newConstraints);
+		const track = stream.getVideoTracks()[0];
+		const imageCapture = new ImageCapture(track);
+		
+		imageCapture.takePhoto().then(blob => {
+			// criar uma URL de imagem ou salvar
+			const imgURL = URL.createObjectURL(blob);
+			console.log(imgURL);
+			const a = document.createElement('a');
+			a.href = imgURL;
+			a.download = 'captured-image.png';
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+		});
+	} catch (error) {
+		console.error('Erro ao capturar a imagem:', error);
+	}
 }
 
 // === EVENTOS PRINCIPAIS ===
