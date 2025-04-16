@@ -131,6 +131,9 @@ function capturePhoto() {
 	photoCanvas.width = videoWidth;
 	photoCanvas.height = videoHeight;
 
+	photoCanvas.style.width = `${videoWidth}px`;
+	photoCanvas.style.height = `${videoHeight}px`;
+
 	const ctx = photoCanvas.getContext('2d');
 
 	if (cameraFeed.style.filter) {
