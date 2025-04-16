@@ -19,7 +19,7 @@ body {
   justify-content: center;
 }
 
-video {
+video, canvas {
   object-fit: cover;
   width: 100%;
   height: auto;
