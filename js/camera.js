@@ -161,10 +161,16 @@ async function saveImage() {
 	// 	a.click();
 	// 	document.body.removeChild(a);
 	// }, 'image/png', 1.0);
-	const newConstraints = {
+	let newConstraints = {
 		video: { deviceId: { exact: currentDeviceId } },
 		audio: false
 	};
+
+	newConstraints["video"]["width"] = 3840;
+	newConstraints["video"]["height"] = 2160;
+
+	console.log(newConstraints);
+
 	try {
 		const stream = await navigator.mediaDevices.getUserMedia(newConstraints);
 		const track = stream.getVideoTracks()[0];
