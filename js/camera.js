@@ -152,43 +152,69 @@ function capturePhoto() {
 }
 
 async function saveImage() {
-	// photoCanvas.toBlob((blob) => {
-	// 	const url = URL.createObjectURL(blob);
-	// 	const a = document.createElement('a');
-	// 	a.href = url;
-	// 	a.download = 'captured-image.png';
-	// 	document.body.appendChild(a);
-	// 	a.click();
-	// 	document.body.removeChild(a);
-	// }, 'image/png', 1.0);
-	let newConstraints = {
-		video: { deviceId: { exact: currentDeviceId } },
-		audio: false
-	};
-
-	newConstraints["video"]["width"] = 3840;
-	newConstraints["video"]["height"] = 2160;
-
-	console.log(newConstraints);
+	let initialStream;
+	let highResStream;
 
 	try {
-		const stream = await navigator.mediaDevices.getUserMedia(newConstraints);
-		const track = stream.getVideoTracks()[0];
-		const imageCapture = new ImageCapture(track);
-		
-		imageCapture.takePhoto().then(blob => {
-			// criar uma URL de imagem ou salvar
-			const imgURL = URL.createObjectURL(blob);
-			console.log(imgURL);
-			const a = document.createElement('a');
-			a.href = imgURL;
-			a.download = 'captured-image.png';
-			document.body.appendChild(a);
-			a.click();
-			document.body.removeChild(a);
+		// Primeiro, obtenha o stream com o device atual
+		initialStream = await navigator.mediaDevices.getUserMedia({
+			video: { deviceId: { exact: currentDeviceId } },
+			audio: false
 		});
+
+		const initialTrack = initialStream.getVideoTracks()[0];
+
+		// Pegue as capacidades da câmera
+		const capabilities = initialTrack.getCapabilities();
+		const maxWidth = capabilities.width.max;
+		const maxHeight = capabilities.height.max;
+
+		console.log("Máxima resolução detectada (capabilities):", maxWidth, maxHeight);
+
+		// Libera a câmera do primeiro stream
+		initialTrack.stop();
+
+		let newConstraints = {
+			video: {
+				deviceId: { exact: currentDeviceId },
+				width: maxWidth,
+				height: maxHeight,
+			},
+			audio: false
+		};
+
+		console.log("Novas constraints:", newConstraints);
+
+		// Solicita novo stream com resolução ideal
+		highResStream = await navigator.mediaDevices.getUserMedia(newConstraints);
+		const highResTrack = highResStream.getVideoTracks()[0];
+		const imageCapture = new ImageCapture(highResTrack);
+
+		// Captura a foto
+		const blob = await imageCapture.takePhoto();
+
+		// Cria um link para download
+		const imgURL = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = imgURL;
+		a.download = 'captured-image.png';
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+
+		// Libera a câmera do stream de alta resolução
+		highResTrack.stop();
+
 	} catch (error) {
 		console.error('Erro ao capturar a imagem:', error);
+	} finally {
+		// Garante que todos os tracks anteriores sejam encerrados mesmo em caso de erro
+		if (initialStream) {
+			initialStream.getTracks().forEach(t => t.stop());
+		}
+		if (highResStream) {
+			highResStream.getTracks().forEach(t => t.stop());
+		}
 	}
 }
 

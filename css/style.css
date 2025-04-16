@@ -73,7 +73,6 @@ video, canvas {
   justify-content: center;
   position: relative;
   background-color: #000;
-  aspect-ratio: 3/3;
   overflow: hidden;
 }
 
