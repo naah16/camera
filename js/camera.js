@@ -221,7 +221,7 @@ async function saveImage() {
 		a.href = imgURL;
 		a.download = 'captured-image.png';
 		document.body.appendChild(a);
-		a.click();
+		// a.click();
 		document.body.removeChild(a);
 
 		// Libera a câmera do stream de alta resolução
@@ -229,6 +229,9 @@ async function saveImage() {
 
 	} catch (error) {
 		console.error('Erro ao capturar a imagem:', error);
+		if( typeof ConsoleJS !== 'undefined'){
+			ConsoleJS.postMessage('{"value": error.toString()}');
+		}
 	} finally {
 		if (initialStream) {
 			initialStream.getTracks().forEach(t => t.stop());
@@ -249,8 +252,8 @@ async function send(blob) {
 	form.append("file", blob, filename);
 
 	const response = await fetch("https://35.175.103.175/api/upload", {
-			method: "POST",
-			body: form,
+		method: "POST",
+		body: form,
 	});
 	
 	console.log("Retorno: "+response.status);
