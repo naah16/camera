@@ -229,8 +229,8 @@ async function saveImage() {
 
 	} catch (error) {
 		console.error('Erro ao capturar a imagem:', error);
-		if( typeof ConsoleJS !== 'undefined'){
-			ConsoleJS.postMessage('{"value": error.toString()}');
+		if( typeof ConsoleJSChannel !== 'undefined'){
+			ConsoleJSChannel.postMessage('{"value": error.toString()}');
 		}
 	} finally {
 		if (initialStream) {
