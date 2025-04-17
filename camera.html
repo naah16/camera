@@ -14,12 +14,21 @@
 		<div class="camera-body">
 			<div class="viewfinder-container">
 				<video id="video" autoplay playsinline></video>
-				<canvas id="photo-canvas"  style="display: none;"></canvas>
+				<video id="record-preview" style="display: none;" controls></video>
+				<canvas id="photo-canvas" style="display: none;"></canvas>
 
 				<!-- Camera info overlay -->
-				<div class="camera-info top-left" id="resolution-info">HD 1080p</div>
+				<div class="camera-info top-left" style="border-radius: 100%; padding: 0;">
+					<button id="flash-btn" class="control-btn">
+						<svg class="icon" id="flash-icon" viewBox="0 0 24 24" width="24" height="24"
+							stroke="currentColor" stroke-width="2" fill="none">
+							<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+						</svg>
+					</button>
+				</div>
+				<div class="camera-info top-center" id="resolution-info">HD 1080p</div>
 				<div class="camera-info top-right"><span class="recording-dot"></span> REC</div>
-				<div class="camera-info top-right">
+				<div class="camera-info top-right close">
 					<div class="btn-close"></div>
 					<div class="btn-download"></div>
 				</div>
@@ -37,11 +46,8 @@
 
 			<div class="camera-controls">
 				<div class="primary-controls">
-					<button id="flash-btn" class="control-btn">
-						<svg class="icon" id="flash-icon" viewBox="0 0 24 24" width="24" height="24"
-							stroke="currentColor" stroke-width="2" fill="none">
-							<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-						</svg>
+					<button id="record-btn" class="control-btn">
+						<i class="fas fa-video" style="font-size: 20px;"></i>
 					</button>
 
 					<button id="shutter-btn" class="shutter-btn">
@@ -75,8 +81,7 @@
 					</div>
 
 					<button id="reset-btn" class="control-btn">
-						<svg class="icon" viewBox="0 0 24 24" width="24" height="24" stroke="currentColor"
-							stroke-width="2" fill="none">
+						<svg class="icon" viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
 							<path d="M1 4v6h6"></path>
 							<path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
 						</svg>
@@ -84,7 +89,6 @@
 				</div>
 			</div>
 
-			<!-- Filters panel -->
 			<div id="filters-panel" class="filters-panel hidden">
 				<div class="filters-grid">
 					<button class="filter-btn active" data-filter="none">Normal</button>
@@ -99,6 +103,7 @@
 	</div>
 
 	<script src="js/camera.js" defer></script>
+	<!-- <script src="js/recorder.js" defer></script> -->
 </body>
 
 </html>

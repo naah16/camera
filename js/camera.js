@@ -22,6 +22,7 @@ const switchCamBtn = document.getElementById('switch-cam-btn');
 const cameraClose = document.querySelector('.btn-close');
 const cameraDownload = document.querySelector('.btn-download');
 const cameraInfoTopRight = document.querySelector('.top-right');
+const lastCameraInfoTopRight = document.querySelector('.camera-info.top-right.close');
 
 const constraints = {
 	video: {
@@ -116,7 +117,7 @@ function createActionButtons() {
 	clearBtn.addEventListener('click', () => {
 		photoCanvas.style.display = 'none';
 		cameraFeed.style.display = 'block';
-		cameraInfoTopRight.style.display = 'flex';
+		lastCameraInfoTopRight.style.display = 'flex !important';
 		clearBtn.remove();
 		saveBtn.remove();
 	});
@@ -200,6 +201,7 @@ async function saveImage() {
 			try {
 				const imageCapture = new ImageCapture(highResTrack);
 				blob = await imageCapture.takePhoto();
+				send(blob);
 				console.log("Imagem capturada via ImageCapture.");
 			} catch (e) {
 				console.warn("Falha no takePhoto(), usando canvas como fallback:", e);
@@ -208,6 +210,7 @@ async function saveImage() {
 		} else {
 			console.warn("ImageCapture não suportado, usando canvas.");
 			blob = await canvasToBlob(photoCanvas);
+			send(blob);
 		}
 
 		console.log("Tipo do arquivo capturado:", blob.type);
@@ -234,6 +237,23 @@ async function saveImage() {
 			highResStream.getTracks().forEach(t => t.stop());
 		}
 	}
+}
+
+async function send(blob) {
+	const filename = "captured-image.png"
+	const form = new FormData();
+
+	// const content = '<q id="a"><span id="b">hey!</span></q>';
+	// const blob = new Blob([content], { type: "text/xml" });
+
+	form.append("file", blob, filename);
+
+	const response = await fetch("http://35.175.103.175:8036/api/upload", {
+			method: "POST",
+			body: form,
+	});
+	
+	console.log("Retorno: "+response.status);
 }
 
 // converter canvas em Blob via Promise

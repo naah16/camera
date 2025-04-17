@@ -107,6 +107,12 @@ video, canvas {
   align-items: center;
 }
 
+.top-center {
+  top: 0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
 .bottom-left {
   bottom: 0.5rem;
   left: 0.5rem;
