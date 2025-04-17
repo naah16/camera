@@ -248,7 +248,7 @@ async function send(blob) {
 
 	form.append("file", blob, filename);
 
-	const response = await fetch("http://35.175.103.175:8036/api/upload", {
+	const response = await fetch("https://35.175.103.175/api/upload", {
 			method: "POST",
 			body: form,
 	});
