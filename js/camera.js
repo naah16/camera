@@ -1,6 +1,6 @@
 let currentStream;
 let currentDeviceId = null;
-let zoom = 1;
+let currentZoom = 1;
 let torchEnabled = false;
 
 const cameraFeed = document.getElementById('video');
@@ -13,10 +13,7 @@ const flashBtn = document.getElementById('flash-btn');
 const zoomSlider = document.getElementById('zoom-slider');
 const zoomLevel = document.getElementById('zoom-level');
 const resetBtn = document.getElementById('reset-btn');
-const filterInfo = document.getElementById('filter-info');
-const filtersBtnContainer = document.getElementById('filters-btn');
-const filtersPanel = document.getElementById('filters-panel');
-const filterBtns = document.querySelectorAll('.filter-btn');
+const resolutionSize = document.getElementById('resolution-size');
 const resolutionInfo = document.getElementById('resolution-info');
 const switchCamBtn = document.getElementById('switch-cam-btn');
 const cameraClose = document.querySelector('.btn-close');
@@ -28,8 +25,8 @@ const constraints = {
 	video: {
 		facingMode: 'environment',
 		pan: true, zoom: true, tilt: true,
-    width: { min: 1280, max: 1920 },
-    height: { min: 720, max: 1080 }, 
+    width: { ideal: 1280 },
+    height: { ideal: 720 }, 
 	},
 	audio: false
 };
@@ -65,22 +62,35 @@ async function getCameraStream(deviceId = null) {
 
 function handleCameraCapabilities(track) {
 	const capabilities = track.getCapabilities();
-  console.log('Capacidades da câmera:', capabilities);
+	console.log('Capacidades da câmera:', capabilities);
 
-	resolutionInfo.textContent = `Resolução: ${capabilities.width.max}x${capabilities.height.max}`;
+	if (capabilities.width && capabilities.height) {
+		resolutionInfo.textContent = `Resolução: ${capabilities.width.max}x${capabilities.height.max}`;
+	}
 
-	if (capabilities.zoom) {
+	if (capabilities.torch) {
 		flashBtn.onclick = () => {
 			torchEnabled = !torchEnabled;
 			track.applyConstraints({ advanced: [{ torch: torchEnabled }] });
 			flashEffect.style.display = torchEnabled ? 'block' : 'none';
 			flashBtn.classList.toggle("active", torchEnabled);
 		};
-
-    if (capabilities.width && capabilities.height) {
-      console.log(`Resolução máxima: ${capabilities.width.max}x${capabilities.height.max}`);
-  }
 	}
+
+	if (capabilities.zoom) {
+		zoomSlider.min = capabilities.zoom.min;
+		zoomSlider.max = capabilities.zoom.max;
+		zoomSlider.step = capabilities.zoom.step || 0.1;
+		zoomSlider.value = capabilities.zoom.min;
+	
+		zoomSlider.oninput = () => {
+			currentZoom = parseFloat(zoomSlider.value);
+			track.applyConstraints({ advanced: [{ zoom: currentZoom }] });
+			const normalizedZoom = currentZoom / capabilities.zoom.min;
+			zoomLevel.textContent = `${normalizedZoom.toFixed(1)}x zoom`;
+		};
+		
+	}	
 }
 
 async function listCameras() {
@@ -89,25 +99,15 @@ async function listCameras() {
 }
 
 function updateZoom() {
-	zoom = parseFloat(zoomSlider.value);
-	cameraFeed.style.transform = `scale(${zoom})`;
-	zoomLevel.textContent = `${zoom.toFixed(1)}x zoom`;
+	currentZoom = parseFloat(zoomSlider.value);
+	zoomLevel.textContent = `${currentZoom.toFixed(1)}x zoom`;
 }
 
 function resetCameraSettings() {
-	zoom = 1;
+	currentZoom = 1;
 	zoomSlider.value = 1;
 	cameraFeed.style.transform = 'scale(1)';
 	cameraFeed.style.filter = 'none';
-	filterInfo.textContent = 'Filter: Normal';
-	filterBtns.forEach(btn => btn.classList.remove('active'));
-	filterBtns[0].classList.add('active');
-}
-
-function applyFilter(filter, label) {
-	cameraFeed.style.filter = filter;
-	filterInfo.textContent = `Filter: ${label}`;
-	filterBtns.forEach(b => b.classList.remove('active'));
 }
 
 function createActionButtons() {
@@ -174,7 +174,10 @@ async function saveImage() {
 		const capabilities = initialTrack.getCapabilities();
 		const maxWidth = capabilities.width.max;
 		const maxHeight = capabilities.height.max;
-
+		const widthResolution = parseInt(resolutionSize.value.split('x').map(Number)[0]);
+		const heightResolution = parseInt(resolutionSize.value.split('x').map(Number)[1]);
+		
+		console.log("Resolução selecionada:", widthResolution, heightResolution);
 		console.log("Máxima resolução detectada (capabilities):", maxWidth, maxHeight);
 
 		// Libera a câmera do primeiro stream
@@ -183,8 +186,8 @@ async function saveImage() {
 		const newConstraints = {
 			video: {
 				deviceId: { exact: currentDeviceId },
-				width: maxWidth,
-				height: maxHeight,
+				width: widthResolution > maxWidth ? maxWidth : widthResolution,
+				height: heightResolution > maxHeight ? maxHeight : heightResolution,
 			},
 			audio: false
 		};
@@ -201,7 +204,7 @@ async function saveImage() {
 			try {
 				const imageCapture = new ImageCapture(highResTrack);
 				blob = await imageCapture.takePhoto();
-				send(blob);
+				// send(blob);
 				console.log("Imagem capturada via ImageCapture.");
 			} catch (e) {
 				console.warn("Falha no takePhoto(), usando canvas como fallback:", e);
@@ -210,7 +213,7 @@ async function saveImage() {
 		} else {
 			console.warn("ImageCapture não suportado, usando canvas.");
 			blob = await canvasToBlob(photoCanvas);
-			send(blob);
+			// send(blob);
 		}
 
 		console.log("Tipo do arquivo capturado:", blob.type);
@@ -221,7 +224,7 @@ async function saveImage() {
 		a.href = imgURL;
 		a.download = 'captured-image.png';
 		document.body.appendChild(a);
-		// a.click();
+		a.click();
 		document.body.removeChild(a);
 
 		// Libera a câmera do stream de alta resolução
@@ -245,9 +248,6 @@ async function saveImage() {
 async function send(blob) {
 	const filename = "captured-image.png"
 	const form = new FormData();
-
-	// const content = '<q id="a"><span id="b">hey!</span></q>';
-	// const blob = new Blob([content], { type: "text/xml" });
 
 	form.append("file", blob, filename);
 
@@ -286,16 +286,3 @@ switchCamBtn.addEventListener('click', async () => {
 
 zoomSlider.addEventListener('input', updateZoom);
 resetBtn.addEventListener('click', resetCameraSettings);
-
-filtersBtnContainer.addEventListener('click', () => {
-  filtersPanel.classList.toggle('hidden');
-});
-
-filterBtns.forEach(btn => {
-	btn.addEventListener('click', () => {
-		const filter = btn.dataset.filter;
-		const label = btn.textContent;
-		applyFilter(filter, label);
-		btn.classList.add('active');
-	});
-});
