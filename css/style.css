@@ -38,6 +38,7 @@ video, canvas {
 .camera-body {
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   height: 100%;
   width: 100%;
   background-color: #1a1a1a;
@@ -74,6 +75,7 @@ video, canvas {
   position: relative;
   background-color: #000;
   overflow: hidden;
+  height: 100%;
 }
 
 #camera-feed {
@@ -300,6 +302,16 @@ video, canvas {
 }
 
 /* Filters panel */
+.filters-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.filters-panel.hidden {
+  display: none;
+}
+
 .filters-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

@@ -14,7 +14,10 @@ const zoomSlider = document.getElementById('zoom-slider');
 const zoomLevel = document.getElementById('zoom-level');
 const resetBtn = document.getElementById('reset-btn');
 const filterInfo = document.getElementById('filter-info');
+const filtersBtnContainer = document.getElementById('filters-btn');
+const filtersPanel = document.getElementById('filters-panel');
 const filterBtns = document.querySelectorAll('.filter-btn');
+const resolutionInfo = document.getElementById('resolution-info');
 const switchCamBtn = document.getElementById('switch-cam-btn');
 const cameraClose = document.querySelector('.btn-close');
 const cameraDownload = document.querySelector('.btn-download');
@@ -62,6 +65,8 @@ async function getCameraStream(deviceId = null) {
 function handleCameraCapabilities(track) {
 	const capabilities = track.getCapabilities();
   console.log('Capacidades da câmera:', capabilities);
+
+	resolutionInfo.textContent = `Resolução: ${capabilities.width.max}x${capabilities.height.max}`;
 
 	if (capabilities.zoom) {
 		flashBtn.onclick = () => {
@@ -174,7 +179,7 @@ async function saveImage() {
 		// Libera a câmera do primeiro stream
 		initialTrack.stop();
 
-		let newConstraints = {
+		const newConstraints = {
 			video: {
 				deviceId: { exact: currentDeviceId },
 				width: maxWidth,
@@ -188,10 +193,24 @@ async function saveImage() {
 		// Solicita novo stream com resolução ideal
 		highResStream = await navigator.mediaDevices.getUserMedia(newConstraints);
 		const highResTrack = highResStream.getVideoTracks()[0];
-		const imageCapture = new ImageCapture(highResTrack);
 
-		// Captura a foto
-		const blob = await imageCapture.takePhoto();
+		let blob;
+
+		if ("ImageCapture" in window) {
+			try {
+				const imageCapture = new ImageCapture(highResTrack);
+				blob = await imageCapture.takePhoto();
+				console.log("Imagem capturada via ImageCapture.");
+			} catch (e) {
+				console.warn("Falha no takePhoto(), usando canvas como fallback:", e);
+				blob = await canvasToBlob(photoCanvas);
+			}
+		} else {
+			console.warn("ImageCapture não suportado, usando canvas.");
+			blob = await canvasToBlob(photoCanvas);
+		}
+
+		console.log("Tipo do arquivo capturado:", blob.type);
 
 		// Cria um link para download
 		const imgURL = URL.createObjectURL(blob);
@@ -208,7 +227,6 @@ async function saveImage() {
 	} catch (error) {
 		console.error('Erro ao capturar a imagem:', error);
 	} finally {
-		// Garante que todos os tracks anteriores sejam encerrados mesmo em caso de erro
 		if (initialStream) {
 			initialStream.getTracks().forEach(t => t.stop());
 		}
@@ -216,6 +234,15 @@ async function saveImage() {
 			highResStream.getTracks().forEach(t => t.stop());
 		}
 	}
+}
+
+// converter canvas em Blob via Promise
+function canvasToBlob(canvas, type = 'image/png', quality = 1) {
+	return new Promise((resolve) => {
+		canvas.toBlob((blob) => {
+			resolve(blob);
+		}, type, quality);
+	});
 }
 
 // === EVENTOS PRINCIPAIS ===
@@ -236,6 +263,10 @@ switchCamBtn.addEventListener('click', async () => {
 
 zoomSlider.addEventListener('input', updateZoom);
 resetBtn.addEventListener('click', resetCameraSettings);
+
+filtersBtnContainer.addEventListener('click', () => {
+  filtersPanel.classList.toggle('hidden');
+});
 
 filterBtns.forEach(btn => {
 	btn.addEventListener('click', () => {
