@@ -12,7 +12,6 @@ const flashEffect = document.getElementById('flash-effect');
 const flashBtn = document.getElementById('flash-btn');
 const zoomSlider = document.getElementById('zoom-slider');
 const zoomLevel = document.getElementById('zoom-level');
-const resetBtn = document.getElementById('reset-btn');
 const resolutionSize = document.getElementById('resolution-size');
 const resolutionInfo = document.getElementById('resolution-info');
 const switchCamBtn = document.getElementById('switch-cam-btn');
@@ -101,13 +100,6 @@ async function listCameras() {
 function updateZoom() {
 	currentZoom = parseFloat(zoomSlider.value);
 	zoomLevel.textContent = `${currentZoom.toFixed(1)}x zoom`;
-}
-
-function resetCameraSettings() {
-	currentZoom = 1;
-	zoomSlider.value = 1;
-	cameraFeed.style.transform = 'scale(1)';
-	cameraFeed.style.filter = 'none';
 }
 
 function createActionButtons() {
@@ -285,4 +277,3 @@ switchCamBtn.addEventListener('click', async () => {
 });
 
 zoomSlider.addEventListener('input', updateZoom);
-resetBtn.addEventListener('click', resetCameraSettings);
