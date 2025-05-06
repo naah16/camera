@@ -10,7 +10,11 @@ const recIndicator = document.getElementById("rec-indicator");
 
 async function setupStream() {
   try {
-    stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: "environment" }  },
+      audio: true
+    });
+    
     videoElement.srcObject = stream;
   } catch (err) {
     console.error("Erro ao acessar a câmera e microfone:", err);
