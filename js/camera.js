@@ -15,10 +15,7 @@ const zoomLevel = document.getElementById('zoom-level');
 const resolutionSize = document.getElementById('resolution-size');
 const resolutionInfo = document.getElementById('resolution-info');
 const switchCamBtn = document.getElementById('switch-cam-btn');
-const cameraClose = document.querySelector('.btn-close');
-const cameraDownload = document.querySelector('.btn-download');
 const cameraInfoTopRight = document.querySelector('.top-right');
-const lastCameraInfoTopRight = document.querySelector('.camera-info.top-right.close');
 
 const constraints = {
 	video: {
@@ -103,23 +100,27 @@ function updateZoom() {
 }
 
 function createActionButtons() {
-	const clearBtn = document.createElement('button');
-	clearBtn.innerHTML = '<i class="fas fa-times" style="font-size: 25px;"></i>';
-	clearBtn.classList.add('close-btn');
-	clearBtn.addEventListener('click', () => {
-		photoCanvas.style.display = 'none';
-		cameraFeed.style.display = 'block';
-		lastCameraInfoTopRight.style.display = 'flex !important';
-		clearBtn.remove();
-		saveBtn.remove();
-	});
-	cameraClose.appendChild(clearBtn);
+	const containerButtons = document.querySelector(".camera-info.top-right.close");
+  const closeButton = document.querySelector("#close-btn");
+  const downloadButton = document.querySelector("#download-btn");
 
-	const saveBtn = document.createElement('button');
-	saveBtn.innerHTML = '<i class="fas fa-download" style="font-size: 25px;"></i>';
-	saveBtn.classList.add('save-btn');
-	saveBtn.addEventListener('click', saveImage);
-	cameraDownload.appendChild(saveBtn);
+	if (!closeButton.dataset.listenerAdded) {
+    closeButton.addEventListener('click', () => {
+      photoCanvas.style.display = 'none';
+      cameraFeed.style.display = 'block';
+      containerButtons.style.display = 'none';
+    });
+    closeButton.dataset.listenerAdded = "true";
+  }
+
+	if (!downloadButton.dataset.listenerAdded) {
+    downloadButton.addEventListener('click', saveImage);
+    downloadButton.dataset.listenerAdded = "true";
+  }
+
+	if (containerButtons) {
+    containerButtons.style.display = "flex";
+  }
 }
 
 function capturePhoto() {

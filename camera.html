@@ -15,7 +15,7 @@
 	<div class="camera-container">
 		<div class="camera-body">
 			<div class="viewfinder-container">
-				<video id="video" autoplay playsinline></video>
+				<video id="video" muted autoplay playsinline></video>
 				<video id="record-preview" style="display: none;" controls></video>
 				<canvas id="photo-canvas" style="display: none;"></canvas>
 
@@ -35,10 +35,20 @@
 					<option value="3840x2160">3840x2160</option>
 				</select>
 				<div class="camera-info top-center" id="resolution-info" style="display: none;">HD 1080p</div>
-				<div class="camera-info top-right"><span class="recording-dot"></span> REC</div>
-				<div class="camera-info top-right close">
-					<div class="btn-close"></div>
-					<div class="btn-download"></div>
+				<div id="rec-indicator" class="camera-info top-right" style="display: none;">
+					<span class="recording-dot"></span> REC
+				</div>				
+				<div class="camera-info top-right close" style="display: none;gap: 8px;">
+					<div class="btn-close">
+						<button id="close-btn" class="control-btn" style="width: 24px; height: 24px;">
+							<i class="fas fa-times" style="font-size: 20px;"></i>
+						</button>
+					</div>
+					<div class="btn-download">
+						<button id="download-btn" class="control-btn" style="width: 24px; height: 24px;">
+							<i class="fas fa-download" style="font-size: 20px;"></i>
+						</button>
+					</div>
 				</div>
 
 				<!-- Flash effect overlay -->
@@ -76,8 +86,8 @@
 		</div>
 	</div>
 
-	<script src="js/camera.js" defer></script>
-	<!-- <script src="js/recorder.js" defer></script> -->
+	<script type="module" src="js/camera.js" defer></script>
+	<script type="module" src="js/recorder.js" defer></script>
 </body>
 
 </html>
