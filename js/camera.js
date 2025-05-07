@@ -27,7 +27,7 @@ const constraints = {
 	audio: false
 };
 
-async function getCameraStream(deviceId = null) {
+async function getCameraStream(deviceId = null, facingMode = null) {
   // liberar stream atual se existir
   if (currentStream) {
     currentStream.getTracks().forEach(track => track.stop());
@@ -36,7 +36,8 @@ async function getCameraStream(deviceId = null) {
 
   const newConstraints = {
     video: {
-      ...(deviceId ? { deviceId: { exact: deviceId } } : { facingMode: 'environment' }),
+      ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
+      ...(facingMode ? { facingMode: facingMode } : {}),
       width: { ideal: 1280 },
       height: { ideal: 720 }
     },
@@ -52,8 +53,14 @@ async function getCameraStream(deviceId = null) {
     currentDeviceId = videoTrack.getSettings().deviceId || null;
 
     const settings = videoTrack.getSettings();
-    videoElement.style.transform = settings.facingMode === 'user' ? 'scaleX(-1)' : 'scaleX(1)';
+    
+    if (settings.facingMode === 'user') {
+      videoElement.style.transform = 'scaleX(-1)';
+    } else {
+      videoElement.style.transform = 'none';
+    }
 
+		
     handleCameraCapabilities(videoTrack);
     
     // atualizar resolução atual
@@ -288,11 +295,16 @@ startCameraBtn.addEventListener('click', async () => {
 shutterBtn.addEventListener('click', capturePhoto);
 
 switchCamBtn.addEventListener('click', async () => {
-	const cameras = await listCameras();
-	if (cameras.length <= 1) return;
-	const currentIndex = cameras.findIndex(c => c.deviceId === currentDeviceId);
-	const nextIndex = (currentIndex + 1) % cameras.length;
-	await getCameraStream(cameras[nextIndex].deviceId);
+  const cameras = await listCameras();
+  if (cameras.length <= 1) return;
+  
+  const currentIndex = cameras.findIndex(c => c.deviceId === currentDeviceId);
+  const nextIndex = (currentIndex + 1) % cameras.length;
+  const nextCamera = cameras[nextIndex];
+  
+  const facingMode = nextCamera.label.toLowerCase().includes('front') ? 'user' : 'environment';
+  
+  await getCameraStream(nextCamera.deviceId, facingMode);
 });
 
 zoomSlider.addEventListener('input', updateZoom);
