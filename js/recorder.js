@@ -12,23 +12,23 @@ const recIndicator = document.getElementById("rec-indicator");
 //detectar o melhor formato suportado
 function getSupportedMimeType() {
   const types = [
-    'video/webm;codecs=vp9,opus',
-    'video/webm;codecs=vp8,opus',
-    'video/mp4;codecs=avc1,aac',
+    'video/mp4;codecs=avc1',
+    'video/webm;codecs=vp9',
+    'video/webm;codecs=vp8',
     'video/webm'
   ];
   
-  return types.find(type => MediaRecorder.isTypeSupported(type)) || '';
+  for (const type of types) {
+    if (MediaRecorder.isTypeSupported(type)) {
+      return type;
+    }
+  }
+  return '';
 }
 
-async function setupStream() {
-  if (stream) {
-    stream.getTracks().forEach(track => track.stop());
-    stream = null;
-  }
+let currentFormat = '';
 
-  videoElement.srcObject = null;
-  
+async function setupStream() {
   try {
     stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: { ideal: "environment" } },
@@ -36,15 +36,18 @@ async function setupStream() {
     });
     
     videoElement.srcObject = stream;
-    mimeType = getSupportedMimeType();
+    currentFormat = getSupportedMimeType();
     
-    videoElement.style.display = 'block';
-    recordPreview.style.display = 'none';
+    // Priorizar MP4 no iOS
+    if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+      console.log("Dispositivo iOS detectado. Usando MP4.");
+      currentFormat = 'video/mp4;codecs=avc1';
+    }
+    console.log("Formato atual:", currentFormat);
     
     return true;
   } catch (err) {
-    console.error("Erro ao acessar a câmera e microfone:", err);
-    videoElement.style.display = 'none';
+    console.error("Erro ao acessar a câmera:", err);
     return false;
   }
 }
@@ -128,16 +131,24 @@ recordBtn.addEventListener("click", async () => {
       }
     };
 
-    mediaRecorder.onstop = () => {
-      const type = mimeType.includes('mp4') ? 'video/mp4' : 'video/webm';
-      const blob = new Blob(recordedChunks, { type });
+    mediaRecorder.onstop = async () => {
+      const blob = new Blob(recordedChunks, { 
+        type: currentFormat || 'video/mp4' 
+      });
+
+      const ext = currentFormat.includes('mp4') ? 'mp4' : 'webm';
       const videoURL = URL.createObjectURL(blob);
-      const ext = type === 'video/mp4' ? 'mp4' : 'webm';
 
       recordPreview.src = videoURL;
       recordPreview.style.display = "block";
       videoElement.style.display = "none";
-      recordPreview.play();
+
+      // Forçar tipo de vídeo para iOS
+      if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+        recordPreview.setAttribute('type', 'video/mp4');
+      }
+
+      // recordPreview.play();
 
       createActionButtons(blob, ext);
     };
