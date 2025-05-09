@@ -341,7 +341,7 @@ async function send(data, type) {
     filename = "foto-" + new Date().toISOString().slice(0, 10) + "." + (data.type.includes('png') ? 'png' : 'jpg');
     form.append("file", data, filename);
   } else if (type === 'video') {
-    filename = "video-" + new Date().toISOString().slice(0, 10) + ".mp4";
+    filename = "gravacao-" + new Date().toISOString().slice(0, 10) + "." + (data.type.includes('mp4') ? 'mp4' : 'webm');
     form.append("file", data, filename);
   } else {
     console.error("Tipo desconhecido:", type);
