@@ -6,6 +6,11 @@ let isRecording = false;
 let mediaRecorder = null;
 let recordedChunks = [];
 let currentFormat = '';
+let videoChunksDB = null;
+const DB_NAME = 'VideoRecorderDB';
+const STORE_NAME = 'videoChunks';
+let currentRecordingId = null;
+const MAX_MEMORY_CHUNKS = 5; // Número máximo de chunks em memória (fallback)
 
 const videoElement = document.getElementById('video');
 const photoCanvas = document.getElementById('photo-canvas');
@@ -349,7 +354,7 @@ async function send(data, type) {
   }
 
   try {
-    const response = await fetch("https://3.239.112.175/api/upload", {
+    const response = await fetch("https://98.80.70.201/api/upload", {
       method: "POST",
       body: form,
     });
@@ -380,6 +385,14 @@ recordBtn.addEventListener("click", async () => {
       if (!success) return;
     }
 
+    // Inicializar IndexedDB
+    try {
+      await initVideoDB();
+    } catch (error) {
+      console.warn('IndexedDB não inicializado - usando fallback em memória:', error);
+    }
+    
+    currentRecordingId = `rec_${Date.now()}`;
     recordedChunks = [];
     
     try {
@@ -389,29 +402,57 @@ recordBtn.addEventListener("click", async () => {
       mediaRecorder = new MediaRecorder(currentStream);
     }
 
-    mediaRecorder.ondataavailable = (e) => {
+    mediaRecorder.ondataavailable = async (e) => {
       if (e.data.size > 0) {
-        recordedChunks.push(e.data);
+        try {
+          const result = await saveVideoChunk(e.data);
+          if (result.inMemory) {
+            recordedChunks.push(result.chunk);
+            // Limitar quantidade de chunks em memória
+            if (recordedChunks.length > MAX_MEMORY_CHUNKS) {
+              recordedChunks.shift();
+            }
+          }
+        } catch (error) {
+          console.error('Erro ao salvar chunk:', error);
+        }
       }
     };
 
     mediaRecorder.onstop = async () => {
-      const blob = new Blob(recordedChunks, { 
-        type: currentFormat || 'video/mp4' 
-      });
+      let chunks = [];
+      
+      try {
+        // Tentar obter do IndexedDB primeiro
+        chunks = await getAllVideoChunks(currentRecordingId);
+        
+        // Se não tiver no DB, usar os da memória
+        if (chunks.length === 0 && recordedChunks.length > 0) {
+          chunks = recordedChunks;
+        }
+        
+        const blob = new Blob(chunks, { type: currentFormat || 'video/mp4' });
+        console.log("Vídeo gerado - tamanho:", blob.size, "bytes");
 
-      const videoURL = URL.createObjectURL(blob);
-      recordPreview.src = videoURL;
-      recordPreview.style.display = "block";
-      videoElement.style.display = "none";
-      cameraInfoTopRight.style.display = 'none';
+        const videoURL = URL.createObjectURL(blob);
+        recordPreview.src = videoURL;
+        recordPreview.style.display = "block";
+        videoElement.style.display = "none";
+        cameraInfoTopRight.style.display = 'none';
 
-      // Forçar tipo de vídeo para iOS
-      if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-        recordPreview.setAttribute('type', 'video/mp4');
+        createActionButtons('video', blob);
+      } catch (error) {
+        console.error('Erro ao gerar vídeo:', error);
+        alert('Erro ao processar vídeo gravado');
+      } finally {
+        // Limpar os chunks após uso
+        try {
+          await clearVideoChunks(currentRecordingId);
+        } catch (error) {
+          console.error('Erro ao limpar chunks:', error);
+        }
+        recordedChunks = [];
       }
-
-      createActionButtons('video', blob);
     };
 
     mediaRecorder.start(1000); // Coletar dados a cada 1s
@@ -467,3 +508,106 @@ switchCamBtn.addEventListener('click', async () => {
 });
 
 zoomSlider.addEventListener('input', updateZoom);
+
+async function initVideoDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+    
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+      }
+    };
+    
+    request.onsuccess = (event) => {
+      videoChunksDB = event.target.result;
+      resolve(videoChunksDB);
+    };
+    
+    request.onerror = (event) => {
+      console.error('Erro ao abrir IndexedDB:', event.target.error);
+      reject(event.target.error);
+    };
+  });
+}
+
+async function saveVideoChunk(chunk) {
+  if (!videoChunksDB) {
+    console.warn('IndexedDB não disponível - usando memória');
+    return { inMemory: true, chunk };
+  }
+
+  const chunkId = `${currentRecordingId}_${Date.now()}`;
+  
+  return new Promise((resolve) => {
+    const transaction = videoChunksDB.transaction(STORE_NAME, 'readwrite');
+    const store = transaction.objectStore(STORE_NAME);
+    
+    store.put({
+      id: chunkId,
+      recordingId: currentRecordingId,
+      chunk: chunk,
+      timestamp: Date.now()
+    });
+    
+    transaction.oncomplete = () => resolve({ inMemory: false, id: chunkId });
+    transaction.onerror = (event) => {
+      console.error('Erro ao salvar chunk:', event.target.error);
+      resolve({ inMemory: true, chunk });
+    };
+  });
+}
+
+async function getAllVideoChunks(recordingId) {
+  if (!videoChunksDB) {
+    console.warn('IndexedDB não disponível - retornando vazio');
+    return [];
+  }
+
+  return new Promise((resolve) => {
+    const transaction = videoChunksDB.transaction(STORE_NAME, 'readonly');
+    const store = transaction.objectStore(STORE_NAME);
+    const request = store.getAll();
+    
+    request.onsuccess = (event) => {
+      const allChunks = event.target.result
+        .filter(item => item.recordingId === recordingId)
+        .sort((a, b) => a.timestamp - b.timestamp)
+        .map(item => item.chunk);
+      
+      resolve(allChunks);
+    };
+    
+    request.onerror = (event) => {
+      console.error('Erro ao recuperar chunks:', event.target.error);
+      resolve([]);
+    };
+  });
+}
+
+async function clearVideoChunks(recordingId) {
+  if (!videoChunksDB) return;
+
+  return new Promise((resolve) => {
+    const transaction = videoChunksDB.transaction(STORE_NAME, 'readwrite');
+    const store = transaction.objectStore(STORE_NAME);
+    const request = store.getAll();
+    
+    request.onsuccess = (event) => {
+      const chunksToDelete = event.target.result
+        .filter(item => item.recordingId === recordingId);
+      
+      chunksToDelete.forEach(chunk => {
+        store.delete(chunk.id);
+      });
+      
+      resolve();
+    };
+    
+    request.onerror = (event) => {
+      console.error('Erro ao limpar chunks:', event.target.error);
+      resolve();
+    };
+  });
+}
