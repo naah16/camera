@@ -7,6 +7,9 @@ let mediaRecorder = null;
 let recordedChunks = [];
 let currentFormat = '';
 let videoChunksDB = null;
+let isRecordingPaused = false;
+let pausedTime = 0;
+let recordingStartTime = 0;
 const DB_NAME = 'VideoRecorderDB';
 const STORE_NAME = 'videoChunks';
 let currentRecordingId = null;
@@ -165,6 +168,7 @@ function handleCameraCapabilities(track) {
       zoomLevel.textContent = `${normalizedZoom.toFixed(1)}x zoom`;
     };
   } else {
+    console.log('Zoom não suportado');
     zoomControl.style.display = 'none';
   }
 }
@@ -483,6 +487,8 @@ recordBtn.addEventListener("click", async () => {
     recordBtn.classList.add("recording");
     recordBtn.innerHTML = '<i class="fas fa-stop" style="font-size: 20px;"></i>';
 
+    recordingStartTime = Date.now();
+    adaptUIForRecording(true);
   } else {
     // Parar gravação
     mediaRecorder.stop();
@@ -490,8 +496,12 @@ recordBtn.addEventListener("click", async () => {
     recIndicator.style.display = "none";
     recordBtn.classList.remove("recording");
     recordBtn.innerHTML = '<i class="fas fa-video" style="font-size: 20px;"></i>';
+    adaptUIForRecording(false);
+    isRecordingPaused = false;
   }
 });
+
+document.getElementById('pause-btn').addEventListener('click', toggleRecordingPause);
 
 // Eventos principais
 startCameraBtn.addEventListener('click', async () => {
@@ -544,6 +554,47 @@ switchCamBtn.addEventListener('click', async () => {
   
   await getCameraStream(nextCamera.deviceId, facingMode);
 });
+
+// Função para pausar/retomar a gravação
+function toggleRecordingPause() {
+  if (!mediaRecorder || mediaRecorder.state === 'inactive') return;
+  
+  isRecordingPaused = !isRecordingPaused;
+  
+  const pauseBtn = document.getElementById('pause-btn');
+  
+  if (isRecordingPaused) {
+    mediaRecorder.pause();
+    pauseBtn.innerHTML = '<i class="fas fa-play" style="font-size: 20px;"></i>';
+    pausedTime = Date.now();
+    flashEffect.style.display = 'block';
+    setTimeout(() => flashEffect.style.display = 'none', 200);
+  } else {
+    mediaRecorder.resume();
+    pauseBtn.innerHTML = '<i class="fas fa-pause" style="font-size: 20px;"></i>';
+    recordingStartTime += (Date.now() - pausedTime);
+  }
+}
+
+// Função para adaptar a interface durante gravação
+function adaptUIForRecording(isRecording) {
+  const shutterBtn = document.getElementById('shutter-btn');
+  const pauseBtn = document.getElementById('pause-btn');
+  const switchCamBtn = document.getElementById('switch-cam-btn');
+  const flashBtn = document.getElementById('flash-btn');
+  
+  if (isRecording) {
+    shutterBtn.style.display = 'none';
+    pauseBtn.style.display = 'block';
+    switchCamBtn.style.display = 'none';
+    flashBtn.style.display = 'none';
+  } else {
+    shutterBtn.style.display = 'flex';
+    pauseBtn.style.display = 'none';
+    switchCamBtn.style.display = 'block';
+    if (torchEnabled) flashBtn.style.display = 'block';
+  }
+}
 
 // Processamento via IndexedDB
 async function initVideoDB() {
