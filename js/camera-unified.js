@@ -19,6 +19,7 @@ const startCameraContainer = document.getElementById('start-camera-container');
 const shutterBtn = document.getElementById('shutter-btn');
 const flashEffect = document.getElementById('flash-effect');
 const flashBtn = document.getElementById('flash-btn');
+const zoomControl = document.getElementById('zoom-control');
 const zoomSlider = document.getElementById('zoom-slider');
 const zoomLevel = document.getElementById('zoom-level');
 const resolutionSize = document.getElementById('resolution-size');
@@ -163,24 +164,23 @@ function handleCameraCapabilities(track) {
       const normalizedZoom = currentZoom / capabilities.zoom.min;
       zoomLevel.textContent = `${normalizedZoom.toFixed(1)}x zoom`;
     };
-    zoomSlider.style.display = 'block';
-    zoomLevel.style.display = 'block';
   } else {
-    zoomSlider.style.display = 'none';
-    zoomLevel.style.display = 'none';
+    zoomControl.style.display = 'none';
   }
-}
-
-// Listar câmeras disponíveis
-async function listCameras() {
-  const devices = await navigator.mediaDevices.enumerateDevices();
-  return devices.filter(device => device.kind === 'videoinput');
 }
 
 // Atualizar zoom
 function updateZoom() {
   currentZoom = parseFloat(zoomSlider.value);
   zoomLevel.textContent = `${currentZoom.toFixed(1)}x zoom`;
+}
+
+zoomSlider.addEventListener('input', updateZoom);
+
+// Listar câmeras disponíveis
+async function listCameras() {
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  return devices.filter(device => device.kind === 'videoinput');
 }
 
 // Criar botões de ação (fechar e download)
@@ -230,7 +230,7 @@ function createActionButtons(type, data = null) {
       const videoURL = URL.createObjectURL(data);
       const a = document.createElement("a");
       a.href = videoURL;
-      a.download = `gravacao.${ext}`;
+      a.download = `gravacao-${Date.now()}.${ext}`;
       document.body.appendChild(a);
       a.click();
       setTimeout(() => {
@@ -311,7 +311,7 @@ async function saveImage() {
     const imgURL = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = imgURL;
-    a.download = `foto-${new Date().toISOString().slice(0, 10)}.${blob.type.includes('png') ? 'png' : 'jpg'}`;
+    a.download = `foto-${Date.now()}.${blob.type.includes('png') ? 'png' : 'jpg'}`;
     document.body.appendChild(a);
     a.click();
     setTimeout(() => {
@@ -343,10 +343,12 @@ async function send(data, type) {
   const form = new FormData();
 
   if (type === 'photo') {
-    filename = "foto-" + new Date().toISOString().slice(0, 10) + "." + (data.type.includes('png') ? 'png' : 'jpg');
+    filename = `foto-${Date.now()}.${data.type.includes('png') ? 'png' : 'jpg'}`;
+    console.log("Enviando imagem: ", filename);
     form.append("file", data, filename);
   } else if (type === 'video') {
-    filename = "gravacao-" + new Date().toISOString().slice(0, 10) + "." + (data.type.includes('mp4') ? 'mp4' : 'webm');
+    filename = `gravacao-${Date.now()}.${data.type.includes('mp4') ? 'mp4' : 'webm'}`;
+    console.log("Enviando vídeo: ", filename);
     form.append("file", data, filename);
   } else {
     console.error("Tipo desconhecido:", type);
@@ -378,7 +380,12 @@ export async function restartCamera() {
 
 // Evento de gravação de vídeo
 recordBtn.addEventListener("click", async () => {
-  if (!isRecording) {
+  if (!currentStream) {
+    alert('Nenhuma câmera ativa. Por favor, inicie a câmera primeiro.');
+    return;
+  }
+
+  if (!isRecording && currentStream) {
     // Iniciar gravação
     if (!currentStream) {
       const success = await getCameraStream();
@@ -406,6 +413,8 @@ recordBtn.addEventListener("click", async () => {
       if (e.data.size > 0) {
         try {
           const result = await saveVideoChunk(e.data);
+          console.log("[DEBUG]  result:", result);
+          console.log("[DEBUG] Chunk salvo:", result.id, "tamanho:", e.data.size);
           if (result.inMemory) {
             recordedChunks.push(result.chunk);
             // Limitar quantidade de chunks em memória
@@ -425,13 +434,26 @@ recordBtn.addEventListener("click", async () => {
       try {
         // Tentar obter do IndexedDB primeiro
         chunks = await getAllVideoChunks(currentRecordingId);
+        console.log("[DEBUG] Chunks recuperados:", chunks.length, "tamanho total:", chunks.reduce((a, c) => a + c.size, 0));
         
         // Se não tiver no DB, usar os da memória
         if (chunks.length === 0 && recordedChunks.length > 0) {
+          console.log("[DEBUG] Usando fallback de memória");
           chunks = recordedChunks;
+        }
+
+        if (chunks.length === 0) {
+          console.error("[ERRO] Nenhum chunk disponível!");
+          return;
         }
         
         const blob = new Blob(chunks, { type: currentFormat || 'video/mp4' });
+
+        if (blob.size === 0) {
+          console.error("[ERRO] Blob vazio!");
+          return;
+        }
+
         console.log("Vídeo gerado - tamanho:", blob.size, "bytes");
 
         const videoURL = URL.createObjectURL(blob);
@@ -492,9 +514,25 @@ startCameraBtn.addEventListener('click', async () => {
   }
 });
 
-shutterBtn.addEventListener('click', capturePhoto);
+shutterBtn.addEventListener('click', () => {
+  if (!currentStream) {
+    alert('Nenhuma câmera ativa. Por favor, inicie a câmera primeiro.');
+    return;
+  }
+  
+  shutterBtn.classList.add('shutter');
+  setTimeout(() => {
+    shutterBtn.classList.remove('shutter');
+  }, 200);
+  
+  capturePhoto();
+});
 
 switchCamBtn.addEventListener('click', async () => {
+  if (!currentStream) {
+    alert('Nenhuma câmera ativa. Por favor, inicie a câmera primeiro.');
+    return;
+  }
   const cameras = await listCameras();
   if (cameras.length <= 1) return;
   
@@ -507,8 +545,7 @@ switchCamBtn.addEventListener('click', async () => {
   await getCameraStream(nextCamera.deviceId, facingMode);
 });
 
-zoomSlider.addEventListener('input', updateZoom);
-
+// Processamento via IndexedDB
 async function initVideoDB() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, 1);
@@ -522,6 +559,7 @@ async function initVideoDB() {
     
     request.onsuccess = (event) => {
       videoChunksDB = event.target.result;
+      console.log('IndexedDB videoChunks: ', videoChunksDB);
       resolve(videoChunksDB);
     };
     
