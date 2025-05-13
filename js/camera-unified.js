@@ -72,7 +72,9 @@ async function getCameraStream(deviceId = null, facingMode = null) {
       ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
       ...(facingMode ? { facingMode: facingMode } : {}),
       width: { ideal: 1280 },
-      height: { ideal: 720 }
+      height: { ideal: 720 },
+      zoom: { ideal: currentZoom },
+      torch: { ideal: torchEnabled },
     },
     audio: true
   };
