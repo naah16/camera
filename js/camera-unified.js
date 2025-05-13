@@ -14,6 +14,9 @@ const DB_NAME = 'VideoRecorderDB';
 const STORE_NAME = 'videoChunks';
 let currentRecordingId = null;
 const MAX_MEMORY_CHUNKS = 5; // Número máximo de chunks em memória (fallback)
+let recordingTimer = null;
+let recordingElapsedTime = 0;
+let lastResumeTime = 0;
 
 const videoElement = document.getElementById('video');
 const photoCanvas = document.getElementById('photo-canvas');
@@ -73,8 +76,7 @@ async function getCameraStream(deviceId = null, facingMode = null) {
       ...(facingMode ? { facingMode: facingMode } : {}),
       width: { ideal: 1280 },
       height: { ideal: 720 },
-      zoom: { ideal: currentZoom },
-      torch: { ideal: torchEnabled },
+      zoom: true
     },
     audio: true
   };
@@ -141,6 +143,7 @@ function updateResolutionInfo(width, height) {
 // Configurar capacidades da câmera (zoom, flash, etc.)
 function handleCameraCapabilities(track) {
   const capabilities = track.getCapabilities();
+  const settings = track.getSettings();
   console.log('Capacidades da câmera:', capabilities);
 
   // Configurar flash/torch se disponível
@@ -171,8 +174,21 @@ function handleCameraCapabilities(track) {
     };
   } else {
     console.log('Zoom não suportado');
-    zoomControl.style.display = 'none';
+    // zoomControl.style.display = 'none';
+    if (typeof settings.zoom !== 'undefined') {
+      const zoomSupported = {
+        zoom: {
+          min: settings.zoom || 1,
+          max: 3, // Valor padrão máximo
+          step: 0.1
+        }
+      };
+      console.log('usando fallback do Zoom suportado:', zoomSupported);
+      // Mescla com capabilities reais se existirem
+      Object.assign(capabilities, zoomSupported);
+    }
   }
+
 }
 
 // Atualizar zoom
@@ -249,6 +265,7 @@ function createActionButtons(type, data = null) {
   if (containerButtons) {
     containerButtons.style.display = "flex";
   }
+  adaptUIForRecording(false);
 }
 
 // Capturar foto
@@ -380,6 +397,9 @@ export async function restartCamera() {
   photoCanvas.style.display = 'none';
   recordPreview.style.display = 'none';
   videoElement.style.display = 'block';
+
+  adaptUIForRecording(false);
+  isRecordingPaused = false;
   
   return await getCameraStream(currentDeviceId);
 }
@@ -491,6 +511,11 @@ recordBtn.addEventListener("click", async () => {
 
     recordingStartTime = Date.now();
     adaptUIForRecording(true);
+
+    // Mostrar timer
+    document.getElementById('recording-timer').style.display = 'block';
+    resetRecordingTimer();
+    startRecordingTimer();
   } else {
     // Parar gravação
     mediaRecorder.stop();
@@ -500,6 +525,9 @@ recordBtn.addEventListener("click", async () => {
     recordBtn.innerHTML = '<i class="fas fa-video" style="font-size: 20px;"></i>';
     adaptUIForRecording(false);
     isRecordingPaused = false;
+    // Esconder timer
+    document.getElementById('recording-timer').style.display = 'none';
+    stopRecordingTimer();
   }
 });
 
@@ -568,13 +596,13 @@ function toggleRecordingPause() {
   if (isRecordingPaused) {
     mediaRecorder.pause();
     pauseBtn.innerHTML = '<i class="fas fa-play" style="font-size: 20px;"></i>';
-    pausedTime = Date.now();
+    stopRecordingTimer();
     flashEffect.style.display = 'block';
     setTimeout(() => flashEffect.style.display = 'none', 200);
   } else {
     mediaRecorder.resume();
     pauseBtn.innerHTML = '<i class="fas fa-pause" style="font-size: 20px;"></i>';
-    recordingStartTime += (Date.now() - pausedTime);
+    startRecordingTimer();
   }
 }
 
@@ -584,17 +612,57 @@ function adaptUIForRecording(isRecording) {
   const pauseBtn = document.getElementById('pause-btn');
   const switchCamBtn = document.getElementById('switch-cam-btn');
   const flashBtn = document.getElementById('flash-btn');
+  const timerElement = document.getElementById('recording-timer');
   
   if (isRecording) {
     shutterBtn.style.display = 'none';
-    pauseBtn.style.display = 'block';
+    pauseBtn.style.display = 'flex';
     switchCamBtn.style.display = 'none';
     flashBtn.style.display = 'none';
+    timerElement.style.display = 'flex';
   } else {
     shutterBtn.style.display = 'flex';
     pauseBtn.style.display = 'none';
-    switchCamBtn.style.display = 'block';
-    if (torchEnabled) flashBtn.style.display = 'block';
+    switchCamBtn.style.display = 'flex';
+    if (torchEnabled) flashBtn.style.display = 'flex';
+    timerElement.style.display = 'none';
+  }
+}
+
+function startRecordingTimer() {
+  stopRecordingTimer(); // Garante que não há múltiplos timers
+  lastResumeTime = Date.now();
+  
+  recordingTimer = setInterval(() => {
+    if (!isRecordingPaused) {
+      recordingElapsedTime = Date.now() - lastResumeTime + recordingElapsedTime;
+      lastResumeTime = Date.now();
+      updateTimerDisplay();
+    }
+  }, 1000); // Atualiza a cada segundo
+}
+
+function stopRecordingTimer() {
+  if (recordingTimer) {
+    clearInterval(recordingTimer);
+    recordingTimer = null;
+  }
+}
+
+function resetRecordingTimer() {
+  stopRecordingTimer();
+  recordingElapsedTime = 0;
+  lastResumeTime = 0;
+  updateTimerDisplay();
+}
+
+function updateTimerDisplay() {
+  const timerElement = document.getElementById('timer-display');
+  if (timerElement) {
+    const totalSeconds = Math.floor(recordingElapsedTime / 1000);
+    const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+    const seconds = (totalSeconds % 60).toString().padStart(2, '0');
+    timerElement.textContent = `${minutes}:${seconds}`;
   }
 }
 
