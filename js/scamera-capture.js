@@ -1,0 +1,228 @@
+class SCameraCaptureController {
+  constructor() {
+    this.currentStream = null;
+    this.currentDeviceId = null;
+    this.imageCapture = null;
+    this.videoTrack = null;
+    this.capabilities = null;
+    this.settings = null;
+    this.currentZoom = 1;
+    this.torchEnabled = false;
+  }
+
+  async init() {
+    await this.getCameraStream();
+  }
+
+  async getCameraStream(constraints = null) {
+    // Liberar stream atual se existir
+    if (this.currentStream) {
+      this.stopCurrentStream();
+    }
+
+    const defaultConstraints = {
+      video: {
+        facingMode: SCamera.currentConfig.facingMode,
+        width: { ideal: SCamera.currentConfig.resolution.width },
+        height: { ideal: SCamera.currentConfig.resolution.height },
+        deviceId: SCamera.currentConfig.deviceId ? { exact: SCamera.currentConfig.deviceId } : undefined,
+        zoom: true
+      },
+      audio: false,
+    };
+
+    const finalConstraints = constraints || defaultConstraints;
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia(finalConstraints);
+      this.currentStream = stream;
+      this.videoTrack = stream.getVideoTracks()[0];
+
+      // Configurar capacidades da câmera
+      this.capabilities = this.videoTrack.getCapabilities ? this.videoTrack.getCapabilities() : null;
+      this.settings = this.videoTrack.getSettings();
+      this.currentDeviceId = this.settings.deviceId;
+
+      // Aplicar zoom atual se suportado
+      if (this.capabilities?.zoom) {
+        this.setZoom(this.currentZoom);
+      }
+
+      // Aplicar flash/torch se suportado
+      if (this.capabilities?.torch) {
+        this.toggleFlash(this.torchEnabled);
+      }
+      
+      // Inicializa ImageCapture se suportado
+      if ('ImageCapture' in window) {
+        this.imageCapture = new ImageCapture(this.videoTrack);
+      }
+      
+      this.capabilities = this.videoTrack.getCapabilities ? this.videoTrack.getCapabilities() : null;
+      this.settings = this.videoTrack.getSettings();
+      this.currentDeviceId = this.settings.deviceId;
+      
+      // Atualiza configurações no SCamera
+      SCamera.currentConfig.deviceId = this.currentDeviceId;
+      SCamera.currentConfig.resolution = {
+        width: this.settings.width,
+        height: this.settings.height
+      };
+      
+      return stream;
+    } catch (error) {
+      alert('Erro ao acessar a câmera. Verifique as permissões ou se existe uma câmera disponível.');
+      console.error('Error accessing camera:', error);
+      throw error;
+    } finally {
+      // Atualiza a interface do usuário
+      const videoElement = document.querySelector('.camera-preview');
+      if (videoElement) {
+        videoElement.srcObject = this.currentStream;
+        videoElement.play();
+      }
+    }
+  }
+
+  stopCurrentStream() {
+    if (this.currentStream) {
+      this.currentStream.getTracks().forEach(track => track.stop());
+      this.currentStream = null;
+      this.imageCapture = null;
+      this.videoTrack = null;
+    }
+  }
+
+  async switchCamera() {
+    // alternar entre câmeras disponíveis
+    const cameras = await SCamera.listCameras();
+    if (cameras.length <= 1) return;
+    
+    const currentIndex = cameras.findIndex(c => c.deviceId === this.currentDeviceId);
+    const nextIndex = (currentIndex + 1) % cameras.length;
+    const nextCamera = cameras[nextIndex];
+
+    const facingMode = nextCamera.label.toLowerCase().includes('front') ? 'user' : 'environment';
+    SCamera.currentConfig.facingMode = facingMode;
+
+    console.log('Switching camera to:', nextCamera.label);
+    const newConstraints = {
+      video: {
+        facingMode: facingMode,
+        deviceId: { exact: nextCamera.deviceId },
+        width: { ideal: SCamera.currentConfig.resolution.width },
+        height: { ideal: SCamera.currentConfig.resolution.height },
+        zoom: true
+      }
+    };
+
+    await this.getCameraStream(newConstraints);
+  }
+
+  async capturePhoto() {
+    try {
+      let photoBlob;
+      
+      // Tentar usar ImageCapture para melhor qualidade
+      if (this.imageCapture) {
+        try {
+          const photoBitmap = await this.imageCapture.grabFrame();
+          
+          // Converter ImageBitmap para Blob
+          const canvas = document.createElement('canvas');
+          canvas.width = photoBitmap.width;
+          canvas.height = photoBitmap.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(photoBitmap, 0, 0);
+          
+          photoBlob = await new Promise((resolve) => {
+            canvas.toBlob(resolve, 'image/jpeg', 0.95);
+          });
+        } catch (error) {
+          console.warn('ImageCapture failed, falling back to canvas:', error);
+          // Continuar para o fallback do canvas
+        }
+      }
+      
+      // Fallback para canvas se ImageCapture não estiver disponível ou falhar
+      if (!photoBlob) {
+        const videoElement = document.querySelector('.camera-preview');
+        if (!videoElement) throw new Error('Video element not found');
+        
+        const canvas = document.createElement('canvas');
+        canvas.width = videoElement.videoWidth;
+        canvas.height = videoElement.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+        
+        photoBlob = await new Promise((resolve) => {
+          canvas.toBlob(resolve, 'image/jpeg', 0.9);
+        });
+      }
+      
+      return photoBlob;
+    } catch (error) {
+      console.error('Error capturing photo:', error);
+      throw error;
+    }
+  }
+
+  setZoom(configZoom) {
+    if (!this.videoTrack || !this.capabilities?.zoom) {
+      console.log('Zoom not supported');
+      return;
+    }
+    const zoomSlider = document.querySelector('#zoom-slider');
+    const zoomControl = document.querySelector('.zoom-control');
+    const zoomLevel = document.querySelector('.zoom-level');
+    
+    if (this.capabilities.zoom) {
+      if(zoomSlider) {
+        zoomSlider.min = this.capabilities.zoom.min;
+        zoomSlider.max = this.capabilities.zoom.max;
+        zoomSlider.step = this.capabilities.zoom.step;
+        zoomSlider.value = this.currentZoom;
+
+        zoomSlider.oninput = () => {
+          const zoomValue = parseFloat(zoomSlider.value);
+          this.currentZoom = zoomValue;
+          this.videoTrack.applyConstraints({
+            advanced: [{ zoom: zoomValue }]
+          }).then(() => {
+            SCamera.currentConfig.zoom = zoomValue;
+            const normalizedZoom = zoomValue / this.capabilities.zoom.min;
+            zoomLevel.textContent = `${normalizedZoom.toFixed(1)}x zoom`;
+          }).catch(error => {
+            console.error('Error setting zoom:', error);
+          });
+        }
+      }
+    } else {
+      console.log('Zoom not supported on this device');
+      if (zoomControl) {
+        zoomControl.style.display = 'none';
+      }
+    }
+  }
+
+  toggleFlash(state) {
+    if (!this.videoTrack || !this.capabilities?.torch) {
+      console.log('Flash/torch not supported');
+      return false;
+    }
+    
+    const constraints = {
+      advanced: [{ torch: state }]
+    };
+    
+    this.videoTrack.applyConstraints(constraints)
+      .then(() => {
+        console.log(`Flash ${state ? 'enabled' : 'disabled'}`);
+      })
+      .catch(error => {
+        console.error('Error toggling flash:', error);
+      });
+    
+    return state;
+  }
+}

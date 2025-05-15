@@ -7,19 +7,22 @@
 	<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 
 	<title>Câmera</title>
-	<link rel="stylesheet" href="./css/style.css" />
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+	<!-- <link rel="stylesheet" href="/css/style.css" /> -->
+	<link rel="stylesheet" href="./css/scamera.css" />
+	<script src="js/scamera-core.js"></script>
+	<script src="js/scamera-capture.js"></script>
+	<script src="js/scamera-ui.js"></script>
 </head>
 
 <body>
-	<div class="camera-container">
+	<!-- <div class="camera-container">
 		<div class="camera-body">
 			<div class="viewfinder-container">
 				<video id="video" muted autoplay playsinline></video>
 				<video id="record-preview" style="display: none;" controls></video>
 				<canvas id="photo-canvas" style="display: none;"></canvas>
 
-				<!-- Camera info overlay -->
 				<div class="camera-info top-left" style="border-radius: 100%; padding: 0;">
 					<button id="flash-btn" class="control-btn">
 						<svg class="icon" id="flash-icon" viewBox="0 0 24 24" width="24" height="24"
@@ -51,10 +54,8 @@
 					</div>
 				</div>
 
-				<!-- Flash effect overlay -->
 				<div id="flash-effect"></div>
 
-				<!-- Start camera button -->
 				<div id="start-camera-container">
 					<button id="start-camera-btn">Iniciar câmera</button>
 					<p class="permission-note">É necessário acesso à câmera. Conceda as permissões quando solicitado.</p>
@@ -92,11 +93,16 @@
 				</div>
 			</div>
 		</div>
-	</div>
+	</div> -->
 
 	<!-- <script type="module" src="js/camera.js" defer></script>
 	<script type="module" src="js/recorder.js" defer></script> -->
-	<script type="module" src="js/camera-unified.js" defer></script>
+	<!-- <script type="module" src="js/camera-unified.js" defer></script> -->
+	<script>
+		document.addEventListener('DOMContentLoaded', () => {
+			SCamera.init();
+		});
+	</script>
 </body>
 
 </html>
