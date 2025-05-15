@@ -65,6 +65,7 @@ class SCameraUIController {
     const zoomControl = this.createZoomControl();
     zoomControl.className += ' mobile-zoom';
     
+    primaryControls.appendChild(divEmpty);
     primaryControls.appendChild(shutterBtn);
     primaryControls.appendChild(switchCamBtn);
     controlsContainer.appendChild(primaryControls);
