@@ -158,7 +158,7 @@ class SCameraUIController {
     
     flashBtn.addEventListener('click', () => {
       const isFlashEnabled = SCamera.currentConfig.flash;
-      flashIcon.style.color = isFlashEnabled === true ? '#FFD700' : '';
+      flashIcon.style.color = isFlashEnabled === true ? '' : '#FFD700';
     });
     
     return flashBtn;
@@ -189,7 +189,12 @@ class SCameraUIController {
   showPhotoPreview(photoBlob) {
     // esconder visualização da câmera
     const viewfinder = document.querySelector('.viewfinder-container');
+    const mobileControls = document.querySelector('.mobile-controls');
+    
     viewfinder.style.display = 'none';
+    if (mobileControls) {
+      mobileControls.style.display = 'none';
+    }
     
     // criar ou atualizar preview da foto
     if (!this.photoPreview) {

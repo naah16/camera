@@ -141,7 +141,7 @@ class SCameraCaptureController {
           ctx.drawImage(photoBitmap, 0, 0);
           
           photoBlob = await new Promise((resolve) => {
-            canvas.toBlob(resolve, 'image/jpeg', 0.95);
+            canvas.toBlob(resolve, 'image/jpeg', 1);
           });
         } catch (error) {
           console.warn('ImageCapture failed, falling back to canvas:', error);
@@ -161,7 +161,7 @@ class SCameraCaptureController {
         ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
         
         photoBlob = await new Promise((resolve) => {
-          canvas.toBlob(resolve, 'image/jpeg', 0.9);
+          canvas.toBlob(resolve, 'image/jpeg', 1);
         });
       }
       
