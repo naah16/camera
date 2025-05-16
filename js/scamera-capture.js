@@ -94,34 +94,102 @@ class SCameraCaptureController {
   }
 
   async switchCamera() {
-    // alternar entre câmeras disponíveis
     const cameras = await SCamera.listCameras();
     if (cameras.length <= 1) return;
-    
-    const currentIndex = cameras.findIndex(c => c.deviceId === this.currentDeviceId);
-    const nextIndex = (currentIndex + 1) % cameras.length;
-    const nextCamera = cameras[nextIndex];
 
-    //alternar somente entre uma camera traseira
-    if (nextCamera.label.toLowerCase().includes('back') && this.currentDeviceId === nextCamera.deviceId) {
+    const categorizedCams = this._categorizeCameras(cameras);
+
+    // Determinar a câmera atual
+    const currentCam = cameras.find(c => c.deviceId === this.currentDeviceId);
+    const currentLabel = currentCam?.label.toLowerCase() || '';
+    
+    const isCurrentFront = currentLabel.includes('front') || currentLabel.includes('user') || currentLabel.includes('face') || (currentLabel.includes('1') && !currentLabel.includes('back'));
+    const isCurrentBack = currentLabel.includes('back') || currentLabel.includes('environment') || (currentLabel.includes('0') && !currentLabel.includes('front'));
+
+    // Lógica de seleção de câmera (mobile + desktop)
+    let targetCam;
+    if (isCurrentFront) {
+      // Prioridade: back > external > qualquer outra
+      targetCam = categorizedCams.back[0] || categorizedCams.external[0] || cameras.find(c => c.deviceId !== this.currentDeviceId);
+    } else if (isCurrentBack) {
+      // Prioridade: front > external > qualquer outra
+      targetCam = categorizedCams.front[0] || categorizedCams.external[0] || cameras.find(c => c.deviceId !== this.currentDeviceId);
+    } else {
+      // Para câmeras não classificadas (desktop), alternar para próxima câmera
+      const currentIndex = cameras.findIndex(c => c.deviceId === this.currentDeviceId);
+      const nextIndex = (currentIndex + 1) % cameras.length;
+      targetCam = cameras[nextIndex];
+    }
+
+    if (!targetCam) {
+      console.warn('No alternative camera found');
       return;
     }
 
-    const facingMode = nextCamera.label.toLowerCase().includes('front') ? 'user' : 'environment';
-    SCamera.currentConfig.facingMode = facingMode;
+    // Determinar facingMode (só aplica se for mobile)
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    let facingMode = 'user'; // Padrão para desktop
+    
+    if (isMobile) {
+      const targetLabel = targetCam.label.toLowerCase();
+      const isTargetFront = targetLabel.includes('front') || targetLabel.includes('user') || targetLabel.includes('face') || (targetLabel.includes('1') && !targetLabel.includes('back'));
 
-    console.log('Switching camera to:', nextCamera.label);
+      facingMode = isTargetFront ? 'user' : 'environment';
+    }
+
+    SCamera.currentConfig.facingMode = facingMode;
+    SCamera.currentConfig.deviceId = targetCam.deviceId;
+
+    console.log('Switching camera to:', targetCam.label);
     const newConstraints = {
       video: {
-        facingMode: facingMode,
-        deviceId: { exact: nextCamera.deviceId },
+        ...(isMobile && { facingMode }), // Só aplica facingMode em mobile
+        deviceId: { exact: targetCam.deviceId },
         width: { ideal: SCamera.currentConfig.resolution.width },
         height: { ideal: SCamera.currentConfig.resolution.height },
         zoom: true
-      }
+      },
+      audio: false
     };
 
-    await this.getCameraStream(newConstraints);
+    try {
+      await this.getCameraStream(newConstraints);
+      // Atualizar espelhamento da câmera frontal (mesmo em desktop)
+      const shouldMirror = targetCam.label.toLowerCase().includes('front') || targetCam.label.toLowerCase().includes('user') || targetCam.label.toLowerCase().includes('face');
+      
+      const videoElement = document.querySelector('.camera-preview');
+      if (videoElement) {
+        videoElement.style.transform = shouldMirror ? 'scaleX(-1)' : 'none';
+      }
+      
+    } catch (error) {
+      console.error('Error switching camera:', error);
+      throw error;
+    }
+  }
+
+  _categorizeCameras(cameras) {
+    return cameras.reduce((acc, cam) => {
+      const label = cam.label.toLowerCase();
+      const isFront = label.includes('front') || label.includes('user') || label.includes('face') || (label.includes('1') && !label.includes('back'));
+      const isBack = label.includes('back') ||  label.includes('environment') || (label.includes('0') && !label.includes('front'));
+      // Verificação para desktop (webcams sem identificação clara)
+      const isProbablyFront = !isBack && (
+        label.includes('integrated') || 
+        label.includes('built-in') || 
+        label.includes('laptop') ||
+        cameras.length === 2 // Assume que a segunda câmera em dispositivos com 2 câmeras é a frontal
+      );
+      if (isFront || isProbablyFront) {
+        acc.front.push(cam);
+      } else if (isBack) {
+        acc.back.push(cam);
+      } else {
+        // Câmeras não classificadas (geralmente webcams externas em desktop)
+        acc.external.push(cam);
+      }
+      return acc;
+    }, { front: [], back: [], external: [] });
   }
 
   async capturePhoto() {
