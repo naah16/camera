@@ -251,7 +251,12 @@ class SCameraUIController {
     }
     // mostrar novamente a visualização da câmera
     const viewfinder = document.querySelector('.viewfinder-container');
+    const mobileControls = document.querySelector('.mobile-controls');
+
     viewfinder.style.display = 'block';
+    if (mobileControls) {
+      mobileControls.style.display = 'flex';
+    }
   }
 
   downloadPhoto() {
