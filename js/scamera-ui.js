@@ -41,7 +41,7 @@ class SCameraUIController {
     }
     
     document.body.appendChild(cameraContainer);
-    this.startCamera();
+    // SCamera.startCamera();
   }
 
   createMobileControls(container) {
@@ -157,8 +157,8 @@ class SCameraUIController {
     flashBtn.appendChild(flashIcon);
     
     flashBtn.addEventListener('click', () => {
-      const isFlashOn = SCamera.toggleFlash();
-      flashIcon.style.color = isFlashOn ? '#FFD700' : '#FFFFFF';
+      const isFlashEnabled = SCamera.currentConfig.flash;
+      flashIcon.style.color = isFlashEnabled === true ? '#FFD700' : '';
     });
     
     return flashBtn;
@@ -184,21 +184,6 @@ class SCameraUIController {
     zoomControl.appendChild(zoomLevel);
 
     return zoomControl;
-  }
-
-  async startCamera() {
-    try {
-      const stream = await SCamera.captureController.getCameraStream();
-      const videoElement = document.querySelector('.camera-preview');
-      videoElement.srcObject = stream;
-      const videoTrack = stream.getVideoTracks()[0];
-      const settings = videoTrack.getSettings();
-
-      videoElement.style.transform = settings.facingMode === 'user' ? 'scaleX(-1)' : 'none';
-    } catch (error) {
-      console.error('Error starting camera:', error);
-      this.showCameraError();
-    }
   }
 
   showPhotoPreview(photoBlob) {
@@ -292,7 +277,7 @@ class SCameraUIController {
     const retryBtn = document.getElementById('retry-camera-btn');
     retryBtn.addEventListener('click', () => {
       errorContainer.remove();
-      this.startCamera();
+      // SCamera.startCamera();
     });
   }
 

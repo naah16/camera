@@ -102,6 +102,11 @@ class SCameraCaptureController {
     const nextIndex = (currentIndex + 1) % cameras.length;
     const nextCamera = cameras[nextIndex];
 
+    //alternar somente entre uma camera traseira
+    if (nextCamera.label.toLowerCase().includes('back') && this.currentDeviceId === nextCamera.deviceId) {
+      return;
+    }
+
     const facingMode = nextCamera.label.toLowerCase().includes('front') ? 'user' : 'environment';
     SCamera.currentConfig.facingMode = facingMode;
 
@@ -211,18 +216,19 @@ class SCameraCaptureController {
       return false;
     }
     
-    const constraints = {
-      advanced: [{ torch: state }]
-    };
-    
-    this.videoTrack.applyConstraints(constraints)
-      .then(() => {
-        console.log(`Flash ${state ? 'enabled' : 'disabled'}`);
-      })
-      .catch(error => {
-        console.error('Error toggling flash:', error);
-      });
-    
-    return state;
+    const flashBtn = document.querySelector('.flash-btn');
+
+    if (flashBtn) {
+      flashBtn.onclick = () => {
+        this.torchEnabled = !this.torchEnabled;
+        this.videoTrack.applyConstraints({
+          advanced: [{ torch: this.torchEnabled }]
+        }).then(() => {
+          SCamera.currentConfig.flash = this.torchEnabled;
+        }).catch(error => {
+          console.error('Error toggling flash:', error);
+        });
+      }
+    }
   }
 }

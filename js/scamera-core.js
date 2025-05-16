@@ -17,8 +17,8 @@ let SCamera = {
     SCamera.uiController = new SCameraUIController();
     SCamera.captureController = new SCameraCaptureController();
     
-    await SCamera.captureController.init();
     SCamera.uiController.init();
+    await SCamera.captureController.init();
     
     await SCamera.loadDevices();
   },
@@ -26,7 +26,8 @@ let SCamera = {
   loadDevices: async () => {
     await SCamera.listCameras();
     const devices = await navigator.mediaDevices.enumerateDevices();
-    SCamera.devices.microphones = devices.filter(device => device.kind === 'audioinput');
+    SCamera.devices.cameras = devices.filter(device => device.kind === 'videoinput');
+    console.log('Cameras:', SCamera.devices.cameras);
     
     if (SCamera.captureController.currentStream) {
       await SCamera.loadSupportedResolutions();
@@ -56,7 +57,6 @@ let SCamera = {
   setZoom: async (zoomLevel) => {
     try {
       const newZoom = await SCamera.captureController.setZoom(zoomLevel);
-      console.log('newZoom:', newZoom);
       SCamera.currentConfig.zoom = newZoom;
       return newZoom;
     } catch (error) {
