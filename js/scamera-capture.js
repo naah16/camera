@@ -104,7 +104,7 @@ class SCameraCaptureController {
 
     // atualizar facingMode
     const newCamera = SCamera.devices.cameras[nextIndex];
-    SCamera.currentConfig.facingMode = newCamera.label.toLowerCase().includes('front') ? 'user' : 'environment';
+    // SCamera.currentConfig.facingMode = newCamera.label.toLowerCase().includes('front') ? 'user' : 'environment';
     
     console.log('listagem de cameras disponíveis:', await SCamera.listCameras());
 
@@ -113,7 +113,8 @@ class SCameraCaptureController {
         video: {
           deviceId: { exact: deviceId },
           width: { ideal: SCamera.currentConfig.resolution.width },
-          height: { ideal: SCamera.currentConfig.resolution.height }
+          height: { ideal: SCamera.currentConfig.resolution.height },
+          facingMode: 'environment',
         },
         audio: false
       });
