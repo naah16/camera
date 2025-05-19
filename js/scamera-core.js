@@ -47,7 +47,12 @@ let SCamera = {
   },
 
   switchCamera: async () => {
-    await SCamera.captureController.switchCamera();
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (isMobile) {
+     await SCamera.captureController.switchMobileCamera();
+    } else {
+      await SCamera.captureController.switchDesktopCamera();
+    }
   },
   
   capturePhoto: async () => {

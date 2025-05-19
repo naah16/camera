@@ -44,7 +44,7 @@ class SCameraUIController {
     // SCamera.startCamera();
   }
 
-  createMobileControls(container) {
+  async createMobileControls(container) {
     const controlsContainer = document.createElement('div');
     const divEmpty = document.createElement('div');
     const actionsContainer = document.createElement('div');
@@ -56,7 +56,7 @@ class SCameraUIController {
     const shutterBtn = this.createShutterBtn();
     shutterBtn.className += ' mobile-shutter';
     
-    const switchCamBtn = this.createSwitchCamBtn();
+    const switchCamBtn = await this.createSwitchCamControl();
     switchCamBtn.className += ' mobile-switch';
     
     const flashBtn = this.createFlashBtn();
@@ -74,15 +74,15 @@ class SCameraUIController {
     container.appendChild(controlsContainer);
   }
 
-  createDesktopControls(container) {
+  async createDesktopControls(container) {
     const controlsContainer = document.createElement('div');
     controlsContainer.className = 'desktop-controls';
     
     const topBar = document.createElement('div');
     topBar.className = 'desktop-top-bar';
     
-    const switchCamBtn = this.createSwitchCamBtn();
-    
+    const switchCamBtn = await this.createSwitchCamControl();
+
     const flashBtn = this.createFlashBtn();
     
     const zoomControl = this.createZoomControl();
@@ -122,28 +122,62 @@ class SCameraUIController {
     return shutterBtn;
   }
 
-  createSwitchCamBtn() {
-    const switchCamBtn = document.createElement('button');
-    const switchCamInner = document.createElement('i');
-    
-    switchCamBtn.id = 'switch-cam-btn';
-    switchCamBtn.className = 'switch-cam-btn';
-    switchCamInner.className = 'fas fa-sync-alt';
-    
-    switchCamBtn.appendChild(switchCamInner);
-    
-    switchCamBtn.addEventListener('click', async () => {
-      try {
-        switchCamBtn.disabled = true;
-        await SCamera.switchCamera();
-      } catch (error) {
-        console.error('Error switching camera:', error);
-      } finally {
-        switchCamBtn.disabled = false;
-      }
-    });
-    
-    return switchCamBtn;
+  async createSwitchCamControl() {
+    if(this.isMobile) {
+      const switchCamBtn = document.createElement('button');
+      const switchCamInner = document.createElement('i');
+      
+      switchCamBtn.id = 'switch-cam-btn';
+      switchCamBtn.className = 'switch-cam-btn';
+      switchCamInner.className = 'fas fa-sync-alt';
+      
+      switchCamBtn.appendChild(switchCamInner);
+      
+      switchCamBtn.addEventListener('click', async () => {
+        try {
+          switchCamBtn.disabled = true;
+          await SCamera.switchCamera();
+        } catch (error) {
+          console.error('Error switching camera:', error);
+        } finally {
+          switchCamBtn.disabled = false;
+        }
+      });
+      
+      return switchCamBtn;
+    } else {
+      const selectCam = document.createElement('select');
+      selectCam.id = 'camera-select';
+      selectCam.className = 'camera-select';
+
+      // Popular opções
+      const cameras = await SCamera.listCameras();
+      
+      cameras.forEach(camera => {
+        const option = document.createElement('option');
+        option.value = camera.deviceId;
+        option.text = camera.label;
+        if (camera.deviceId === SCamera.currentConfig.deviceId) {
+          option.selected = true;
+        }
+        selectCam.appendChild(option);
+      });
+
+      selectCam.addEventListener('change', async (event) => {
+        const selectedDeviceId = event.target.value;
+        try {
+          selectCam.disabled = true;
+          SCamera.currentConfig.deviceId = selectedDeviceId;
+          await SCamera.switchCamera();
+        } catch (error) {
+          console.error('Error switching camera:', error);
+        } finally {
+          selectCam.disabled = false;
+        }
+      });
+
+      return selectCam;
+    }
   }
 
   createFlashBtn() {

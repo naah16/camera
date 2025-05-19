@@ -157,6 +157,14 @@ body {
   border-radius: 100%;
 }
 
+.camera-select {
+  background: rgba(0, 0, 0, 0.3);
+  color: white;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 5px;
+}
+
 /* Desktop Controls */
 .desktop-controls {
   position: absolute;

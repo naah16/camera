@@ -95,27 +95,17 @@ class SCameraCaptureController {
     }
   }
 
-  async switchCamera() {
-    // alternar entre câmeras disponíveis
+  async switchMobileCamera() {
     const currentIndex = SCamera.devices.cameras.findIndex(
       cam => cam.deviceId === this.currentDeviceId
     );
     console.log('Câmera atual:', SCamera.devices.cameras[currentIndex].label);
-    const nextIndex = (currentIndex + 1) % SCamera.devices.cameras.length;
-    const deviceId = SCamera.devices.cameras[nextIndex].deviceId;
-
-    // atualizar facingMode
-    const newCamera = SCamera.devices.cameras[nextIndex];
-    // SCamera.currentConfig.facingMode = newCamera.label.toLowerCase().includes('front') ? 'user' : 'environment';
-    
-    console.log('listagem de cameras disponíveis:', await SCamera.listCameras());
 
     SCamera.currentConfig.facingMode = SCamera.currentConfig.facingMode == "user" ? "environment" : "user";
 
     try {
       await this.getCameraStream({
         video: {
-          // deviceId: { exact: deviceId },
           width: { ideal: SCamera.currentConfig.resolution.width },
           height: { ideal: SCamera.currentConfig.resolution.height },
           facingMode: SCamera.currentConfig.facingMode,
@@ -133,6 +123,45 @@ class SCameraCaptureController {
       }
     } catch (error) {
       console.error('Error switching camera:', error);
+      throw error;
+    }
+  }
+
+  async switchDesktopCamera() {
+    const deviceId = SCamera.currentConfig.deviceId;
+
+    if (!deviceId) {
+      console.warn('Nenhum deviceId definido. Abortando troca de câmera.');
+      return;
+    }
+
+    const newCamera = SCamera.devices.cameras.find(cam => cam.deviceId === deviceId);
+    if (!newCamera) {
+      console.error('Câmera não encontrada com o deviceId fornecido.');
+      return;
+    }
+
+    SCamera.currentConfig.facingMode = newCamera.label.toLowerCase().includes('front') ? 'user' : 'environment';
+
+    try {
+      await this.getCameraStream({
+        video: {
+          deviceId: { exact: deviceId },
+          width: { ideal: SCamera.currentConfig.resolution.width },
+          height: { ideal: SCamera.currentConfig.resolution.height }
+        },
+        audio: false
+      });
+
+      if (this.capabilities?.zoom && SCamera.currentConfig.zoom > 1) {
+        this.setZoom(SCamera.currentConfig.zoom);
+      }
+
+      if (this.capabilities?.torch) {
+        this.toggleFlash(SCamera.currentConfig.flash);
+      }
+    } catch (error) {
+      console.error('Erro ao trocar a câmera:', error);
       throw error;
     }
   }
