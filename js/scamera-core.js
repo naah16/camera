@@ -79,30 +79,10 @@ let SCamera = {
     }
   },
 
-  listCameras: async () => {
+   listCameras: async () => {
     try {
       const devices = await navigator.mediaDevices.enumerateDevices();
-      const videoDevices = devices.filter(device => device.kind === 'videoinput');
-
-      let front = null;
-      let back = null;
-
-      for (const device of videoDevices) {
-        const label = device.label.toLowerCase();
-
-        if (!front && (label.includes('front') || label.includes('frontal') || label.includes('user'))) {
-          front = device;
-        }
-
-        if (!back && (label.includes('back') || label.includes('traseira') || label.includes('rear') || label.includes('environment'))) {
-          back = device;
-        }
-      }
-
-      // fallback: caso só tenha uma câmera
-      const filteredCameras = [front, back].filter(Boolean);
-      SCamera.devices.cameras = filteredCameras.length ? filteredCameras : videoDevices;
-
+      SCamera.devices.cameras = devices.filter(device => device.kind === 'videoinput');
       return SCamera.devices.cameras;
     } catch (error) {
       console.error('Error listing cameras:', error);

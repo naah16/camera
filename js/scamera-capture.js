@@ -94,38 +94,40 @@ class SCameraCaptureController {
   }
 
   async switchCamera() {
-    const cameras = SCamera.devices.cameras;
-    if (cameras.length < 2) {
-      console.warn('Não há múltiplas câmeras para alternar.');
-      return;
-    }
+    // alternar entre câmeras disponíveis
+    const currentIndex = SCamera.devices.cameras.findIndex(
+      cam => cam.deviceId === this.currentDeviceId
+    );
+    console.log('Câmera atual:', SCamera.devices.cameras[currentIndex].label);
+    const nextIndex = (currentIndex + 1) % SCamera.devices.cameras.length;
+    const deviceId = SCamera.devices.cameras[nextIndex].deviceId;
 
-    const currentIndex = cameras.findIndex(cam => cam.deviceId === this.currentDeviceId);
-    const nextIndex = (currentIndex + 1) % cameras.length;
-    const nextCamera = cameras[nextIndex];
-
-    SCamera.currentConfig.facingMode = nextCamera.label.toLowerCase().includes('front') ? 'user' : 'environment';
-    SCamera.currentConfig.deviceId = nextCamera.deviceId;
+    // atualizar facingMode
+    const newCamera = SCamera.devices.cameras[nextIndex];
+    SCamera.currentConfig.facingMode = newCamera.label.toLowerCase().includes('front') ? 'user' : 'environment';
+    
+    console.log('listagem de cameras disponíveis:', await SCamera.listCameras());
 
     try {
       await this.getCameraStream({
         video: {
-          deviceId: { exact: nextCamera.deviceId },
+          deviceId: { exact: deviceId },
           width: { ideal: SCamera.currentConfig.resolution.width },
           height: { ideal: SCamera.currentConfig.resolution.height }
         },
         audio: false
       });
-
+      
+      // Reaplicar configurações após trocar a câmera
       if (this.capabilities?.zoom && SCamera.currentConfig.zoom > 1) {
         this.setZoom(SCamera.currentConfig.zoom);
       }
-
+      
       if (this.capabilities?.torch) {
         this.toggleFlash(SCamera.currentConfig.flash);
       }
     } catch (error) {
-      console.error('Erro ao alternar a câmera:', error);
+      console.error('Error switching camera:', error);
       throw error;
     }
   }
