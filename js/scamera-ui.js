@@ -48,11 +48,13 @@ class SCameraUIController {
     const controlsContainer = document.createElement('div');
     const primaryControls = document.createElement('div');
     const divEmpty = document.createElement('div');
+    const actionsContainer = document.createElement('div');
 
     controlsContainer.className = 'mobile-controls';
     primaryControls.className = 'mobile-primary-controls';
-    
+    actionsContainer.className = 'mobile-actions-container';
     divEmpty.style.width = '40px';
+
     const shutterBtn = this.createShutterBtn();
     shutterBtn.className += ' mobile-shutter';
     
@@ -65,11 +67,12 @@ class SCameraUIController {
     const zoomControl = this.createZoomControl();
     zoomControl.className += ' mobile-zoom';
     
-    primaryControls.appendChild(divEmpty);
-    primaryControls.appendChild(shutterBtn);
-    primaryControls.appendChild(switchCamBtn);
+    actionsContainer.appendChild(divEmpty);
+    actionsContainer.appendChild(shutterBtn);
+    actionsContainer.appendChild(switchCamBtn);
+    primaryControls.appendChild(zoomControl);
+    primaryControls.appendChild(actionsContainer);
     controlsContainer.appendChild(primaryControls);
-    controlsContainer.appendChild(zoomControl);
     container.appendChild(flashBtn);
     container.appendChild(controlsContainer);
   }
@@ -170,6 +173,7 @@ class SCameraUIController {
     const zoomLevel = document.createElement('div');
     
     zoomControl.className = 'zoom-control';
+    zoomSlider.style.display = 'none';
     zoomSlider.id = 'zoom-slider';
     zoomSlider.type = 'range';
     zoomSlider.min = '1';
@@ -178,8 +182,17 @@ class SCameraUIController {
     zoomSlider.value = '1';
     
     zoomLevel.className = 'zoom-level';
-    zoomLevel.textContent = '1.0x zoom';
-    
+    zoomLevel.textContent = 'x1.0';
+
+    //adicionar toggle para abrir o zoomSlider
+    zoomLevel.addEventListener('click', () => {
+      if (zoomSlider.style.display === 'none') {
+        zoomSlider.style.display = 'block';
+      } else {
+        zoomSlider.style.display = 'none';
+      }
+    });
+
     zoomControl.appendChild(zoomSlider);
     zoomControl.appendChild(zoomLevel);
 

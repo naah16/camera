@@ -264,7 +264,7 @@ class SCameraCaptureController {
           }).then(() => {
             SCamera.currentConfig.zoom = zoomValue;
             const normalizedZoom = zoomValue / this.capabilities.zoom.min;
-            zoomLevel.textContent = `${normalizedZoom.toFixed(1)}x zoom`;
+            zoomLevel.textContent = `x${normalizedZoom.toFixed(1)}`;
           }).catch(error => {
             console.error('Error setting zoom:', error);
           });
