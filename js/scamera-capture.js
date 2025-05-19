@@ -97,6 +97,10 @@ class SCameraCaptureController {
     const cameras = await SCamera.listCameras();
     if (cameras.length <= 1) return;
 
+    // Resetar zoom para o padrão (1x)
+    this.currentZoom = 1;
+    SCamera.currentConfig.zoom = 1;
+
     const categorizedCams = this._categorizeCameras(cameras);
 
     // Determinar a câmera atual
@@ -154,6 +158,15 @@ class SCameraCaptureController {
 
     try {
       await this.getCameraStream(newConstraints);
+
+      // Atualizar UI do zoom
+      const zoomSlider = document.querySelector('#zoom-slider');
+      const zoomLevel = document.querySelector('.zoom-level');
+      if (zoomSlider && zoomLevel) {
+        zoomSlider.value = 1;
+        zoomLevel.textContent = 'x1.0';
+      }
+      
       // Atualizar espelhamento da câmera frontal (mesmo em desktop)
       const shouldMirror = targetCam.label.toLowerCase().includes('front') || targetCam.label.toLowerCase().includes('user') || targetCam.label.toLowerCase().includes('face');
       
@@ -241,13 +254,15 @@ class SCameraCaptureController {
   }
 
   setZoom(configZoom) {
-    if (!this.videoTrack || !this.capabilities?.zoom) {
-      console.log('Zoom not supported');
-      return;
-    }
     const zoomSlider = document.querySelector('#zoom-slider');
     const zoomControl = document.querySelector('.zoom-control');
     const zoomLevel = document.querySelector('.zoom-level');
+
+    if (!this.videoTrack || !this.capabilities?.zoom) {
+      console.log('Zoom not supported');
+      zoomControl.style.display = 'none';
+      return;
+    }
     
     if (this.capabilities.zoom) {
       if(zoomSlider) {
@@ -266,37 +281,43 @@ class SCameraCaptureController {
             const normalizedZoom = zoomValue / this.capabilities.zoom.min;
             zoomLevel.textContent = `x${normalizedZoom.toFixed(1)}`;
           }).catch(error => {
+            zoomControl.style.display = 'none';
             console.error('Error setting zoom:', error);
           });
         }
       }
     } else {
+      zoomControl.style.display = 'none';
       console.log('Zoom not supported on this device');
-      if (zoomControl) {
-        zoomControl.style.display = 'none';
-      }
     }
   }
 
   toggleFlash(state) {
-    if (!this.videoTrack || !this.capabilities?.torch) {
-      console.log('Flash/torch not supported');
-      return false;
-    }
-    
     const flashBtn = document.querySelector('.flash-btn');
 
-    if (flashBtn) {
-      flashBtn.onclick = () => {
-        this.torchEnabled = !this.torchEnabled;
-        this.videoTrack.applyConstraints({
-          advanced: [{ torch: this.torchEnabled }]
-        }).then(() => {
-          SCamera.currentConfig.flash = this.torchEnabled;
-        }).catch(error => {
-          console.error('Error toggling flash:', error);
-        });
+    if (!this.videoTrack || !this.capabilities?.torch) {
+      console.log('Flash/torch not supported');
+      flashBtn.style.display = 'none';
+      return false;
+    }
+
+    if(this.capabilities.torch) {
+      if (flashBtn) {
+        flashBtn.onclick = () => {
+          this.torchEnabled = !this.torchEnabled;
+          this.videoTrack.applyConstraints({
+            advanced: [{ torch: this.torchEnabled }]
+          }).then(() => {
+            SCamera.currentConfig.flash = this.torchEnabled;
+          }).catch(error => {
+            flashBtn.style.display = 'none';
+            console.error('Error toggling flash:', error);
+          });
+        }
       }
+    } else {
+      flashBtn.style.display = 'none';
+      console.log('Flash/torch not supported on this device');
     }
   }
 }

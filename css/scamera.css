@@ -82,6 +82,7 @@ body {
   z-index: 1000;
   flex-direction: column;
   gap: 6px;
+  user-select: none;
 }
 
 .mobile-actions-container {
@@ -205,7 +206,7 @@ body {
 
 .desktop-top-bar .zoom-level {
   text-align: center;
-  font-size: 18px;
+  font-size: 16px;
   color: white;
   width: 42px;
   height: 42px;
