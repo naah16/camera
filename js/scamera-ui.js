@@ -68,8 +68,8 @@ class SCameraUIController {
     actionsContainer.appendChild(divEmpty);
     actionsContainer.appendChild(shutterBtn);
     actionsContainer.appendChild(switchCamBtn);
-    controlsContainer.appendChild(actionsContainer);
     controlsContainer.appendChild(zoomControl);
+    controlsContainer.appendChild(actionsContainer);
     container.appendChild(flashBtn);
     container.appendChild(controlsContainer);
   }
