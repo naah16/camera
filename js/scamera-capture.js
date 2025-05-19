@@ -43,6 +43,8 @@ class SCameraCaptureController {
       this.settings = this.videoTrack.getSettings();
       this.currentDeviceId = this.settings.deviceId;
 
+      console.log("Capacidades da câmera:", this.capabilities);
+
       // Aplicar zoom atual se suportado
       if (this.capabilities?.zoom) {
         this.setZoom(this.currentZoom);
