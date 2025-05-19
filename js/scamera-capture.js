@@ -108,13 +108,15 @@ class SCameraCaptureController {
     
     console.log('listagem de cameras disponíveis:', await SCamera.listCameras());
 
+    SCamera.currentConfig.facingMode = SCamera.currentConfig.facingMode == "user" ? "environment" : "user";
+
     try {
       await this.getCameraStream({
         video: {
-          deviceId: { exact: deviceId },
+          // deviceId: { exact: deviceId },
           width: { ideal: SCamera.currentConfig.resolution.width },
           height: { ideal: SCamera.currentConfig.resolution.height },
-          facingMode: 'environment',
+          facingMode: SCamera.currentConfig.facingMode,
         },
         audio: false
       });
