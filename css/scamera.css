@@ -81,13 +81,14 @@ body {
   justify-content: center;
   z-index: 1000;
   flex-direction: column;
+  gap: 6px;
 }
 
-.mobile-primary-controls {
+.mobile-actions-container {
   display: flex;
   align-items: center;
-  width: 100%;
   justify-content: space-between;
+  width: 100%;
 }
 
 .mobile-shutter {
@@ -133,6 +134,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  user-select: none;
 }
 
 .mobile-zoom input[type="range"] {
@@ -141,11 +143,13 @@ body {
 }
 
 .mobile-zoom .zoom-level {
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 42px;
+  width: 30px;
+  height: 30px;
+  font-size: 12px;
   background: rgba(0, 0, 0, 0.3);
   color: white;
   padding: 5px;

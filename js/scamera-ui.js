@@ -46,14 +46,12 @@ class SCameraUIController {
 
   createMobileControls(container) {
     const controlsContainer = document.createElement('div');
-    const primaryControls = document.createElement('div');
     const divEmpty = document.createElement('div');
     const actionsContainer = document.createElement('div');
 
     controlsContainer.className = 'mobile-controls';
-    primaryControls.className = 'mobile-primary-controls';
     actionsContainer.className = 'mobile-actions-container';
-    divEmpty.style.width = '40px';
+    divEmpty.style.width = '50px';
 
     const shutterBtn = this.createShutterBtn();
     shutterBtn.className += ' mobile-shutter';
@@ -70,9 +68,8 @@ class SCameraUIController {
     actionsContainer.appendChild(divEmpty);
     actionsContainer.appendChild(shutterBtn);
     actionsContainer.appendChild(switchCamBtn);
-    primaryControls.appendChild(zoomControl);
-    primaryControls.appendChild(actionsContainer);
-    controlsContainer.appendChild(primaryControls);
+    controlsContainer.appendChild(actionsContainer);
+    controlsContainer.appendChild(zoomControl);
     container.appendChild(flashBtn);
     container.appendChild(controlsContainer);
   }
