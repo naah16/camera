@@ -6,7 +6,6 @@ class SCameraUIController {
 
   init() {
     this.createCameraPreview();
-    this.setupEventListeners();
   }
 
   createCameraPreview() {
@@ -61,7 +60,7 @@ class SCameraUIController {
     const flashBtn = this.createFlashBtn();
     flashBtn.className += ' mobile-flash';
     
-    const zoomControl = this.createZoomSliderUI();
+    const zoomControl = this.createZoomControl();
     zoomControl.className += ' mobile-zoom';
     
     actionsContainer.appendChild(flashBtn);
@@ -195,141 +194,141 @@ class SCameraUIController {
     return flashBtn;
   }
 
-  // createZoomControl() {
-  //   const zoomControl = document.createElement('div');
-  //   const zoomSlider = document.createElement('input');
-  //   const zoomLevel = document.createElement('div');
+  createZoomControl() {
+    const zoomControl = document.createElement('div');
+    const zoomSlider = document.createElement('input');
+    const zoomLevel = document.createElement('div');
     
-  //   zoomControl.className = 'zoom-control';
-  //   zoomSlider.style.display = 'none';
-  //   zoomSlider.id = 'zoom-slider';
-  //   zoomSlider.type = 'range';
-  //   zoomSlider.min = '1';
-  //   zoomSlider.max = '3';
-  //   zoomSlider.step = '0.1';
-  //   zoomSlider.value = '1';
+    zoomControl.className = 'zoom-control';
+    zoomSlider.style.display = 'none';
+    zoomSlider.id = 'zoom-slider';
+    zoomSlider.type = 'range';
+    zoomSlider.min = '1';
+    zoomSlider.max = '3';
+    zoomSlider.step = '0.1';
+    zoomSlider.value = '1';
     
-  //   zoomLevel.className = 'zoom-level';
-  //   zoomLevel.textContent = 'x1.0';
+    zoomLevel.className = 'zoom-level';
+    zoomLevel.textContent = 'x1.0';
 
-  //   //adicionar toggle para abrir o zoomSlider
-  //   zoomLevel.addEventListener('click', () => {
-  //     if (zoomSlider.style.display === 'none') {
-  //       zoomSlider.style.display = 'block';
-  //     } else {
-  //       zoomSlider.style.display = 'none';
-  //     }
-  //   });
+    //adicionar toggle para abrir o zoomSlider
+    zoomLevel.addEventListener('click', () => {
+      if (zoomSlider.style.display === 'none') {
+        zoomSlider.style.display = 'block';
+      } else {
+        zoomSlider.style.display = 'none';
+      }
+    });
 
-  //   zoomControl.appendChild(zoomSlider);
-  //   zoomControl.appendChild(zoomLevel);
+    zoomControl.appendChild(zoomSlider);
+    zoomControl.appendChild(zoomLevel);
 
-  //   if (SCamera.currentConfig.facingMode === 'user') {
-  //     zoomControl.style.display = 'none';
-  //   } else {
-  //     zoomControl.style.display = 'flex';
-  //   }
-
-  //   return zoomControl;
-  // }
-
-  createZoomSliderUI() {
-    const zoomContainer = document.createElement('div');
-    zoomContainer.className = 'zoom-slider-container';
-
-    // Verificação adicional para câmera frontal
     if (SCamera.currentConfig.facingMode === 'user') {
-      zoomContainer.style.display = 'none';
-      return zoomContainer; // Retorna early se for câmera frontal
+      zoomControl.style.display = 'none';
+    } else {
+      zoomControl.style.display = 'flex';
     }
 
-    const zoomValueLabel = document.createElement('div');
-    zoomValueLabel.className = 'zoom-value-label';
-
-    const sliderTrack = document.createElement('div');
-    sliderTrack.className = 'zoom-slider-track';
-
-    const indicator = document.createElement('div');
-    indicator.className = 'zoom-indicator';
-
-    sliderTrack.appendChild(indicator);
-    zoomContainer.appendChild(zoomValueLabel);
-    zoomContainer.appendChild(sliderTrack);
-
-    // Valores padrão seguros
-    let zoomMin = 1.0;
-    let zoomMax = 3.0;
-    let currentZoom = 1.0;
-
-    // Função segura para atualizar UI
-    const updateUI = (zoom) => {
-      try {
-        // Garante que zoom é um número válido
-        const safeZoom = Number(zoom) || zoomMin;
-        currentZoom = Math.max(zoomMin, Math.min(zoomMax, safeZoom));
-        
-        const normalized = (currentZoom - zoomMin) / (zoomMax - zoomMin);
-        indicator.style.left = `${normalized * 100}%`;
-        zoomValueLabel.textContent = `x${currentZoom.toFixed(1)}`;
-      } catch (error) {
-        console.error('Erro ao atualizar zoom UI:', error);
-        zoomValueLabel.textContent = 'x1.0';
-      }
-    };
-
-    // Configuração inicial segura
-    const initZoom = () => {
-      try {
-        // Atualiza com capacidades reais se disponível
-        if (SCamera.captureController?.capabilities?.zoom) {
-          zoomMin = SCamera.captureController.capabilities.zoom.min || zoomMin;
-          zoomMax = SCamera.captureController.capabilities.zoom.max || zoomMax;
-        }
-
-        // Usa o valor atual ou padrão
-        const initialZoom = SCamera.currentConfig?.zoom || zoomMin;
-        updateUI(initialZoom);
-      } catch (error) {
-        console.error('Erro ao inicializar zoom:', error);
-        updateUI(zoomMin);
-      }
-    };
-
-    // Handler de toque seguro
-    const handleTouch = (e) => {
-      try {
-        e.preventDefault();
-        const rect = sliderTrack.getBoundingClientRect();
-        const touchX = e.touches[0].clientX;
-        const percent = Math.max(0, Math.min(1, (touchX - rect.left) / rect.width));
-        const zoomValue = zoomMin + percent * (zoomMax - zoomMin);
-        
-        SCamera.setZoom(zoomValue)
-          .then(() => updateUI(zoomValue))
-          .catch(err => console.error('Erro ao definir zoom:', err));
-      } catch (error) {
-        console.error('Erro no handler de toque:', error);
-      }
-    };
-
-    // Configura listeners
-    sliderTrack.addEventListener('touchstart', handleTouch, { passive: false });
-    sliderTrack.addEventListener('touchmove', handleTouch, { passive: false });
-
-    // Configura callback seguro
-    SCamera.onZoomChange = (zoom) => {
-      try {
-        updateUI(zoom);
-      } catch (error) {
-        console.error('Erro no callback de zoom:', error);
-      }
-    };
-
-    // Inicializa
-    initZoom();
-
-    return zoomContainer;
+    return zoomControl;
   }
+
+  // createZoomSliderUI() {
+  //   const zoomContainer = document.createElement('div');
+  //   zoomContainer.className = 'zoom-slider-container';
+
+  //   // Verificação adicional para câmera frontal
+  //   if (SCamera.currentConfig.facingMode === 'user') {
+  //     zoomContainer.style.display = 'none';
+  //     return zoomContainer; // Retorna early se for câmera frontal
+  //   }
+
+  //   const zoomValueLabel = document.createElement('div');
+  //   zoomValueLabel.className = 'zoom-value-label';
+
+  //   const sliderTrack = document.createElement('div');
+  //   sliderTrack.className = 'zoom-slider-track';
+
+  //   const indicator = document.createElement('div');
+  //   indicator.className = 'zoom-indicator';
+
+  //   sliderTrack.appendChild(indicator);
+  //   zoomContainer.appendChild(zoomValueLabel);
+  //   zoomContainer.appendChild(sliderTrack);
+
+  //   // Valores padrão seguros
+  //   let zoomMin = 1.0;
+  //   let zoomMax = 3.0;
+  //   let currentZoom = 1.0;
+
+  //   // Função segura para atualizar UI
+  //   const updateUI = (zoom) => {
+  //     try {
+  //       // Garante que zoom é um número válido
+  //       const safeZoom = Number(zoom) || zoomMin;
+  //       currentZoom = Math.max(zoomMin, Math.min(zoomMax, safeZoom));
+        
+  //       const normalized = (currentZoom - zoomMin) / (zoomMax - zoomMin);
+  //       indicator.style.left = `${normalized * 100}%`;
+  //       zoomValueLabel.textContent = `x${currentZoom.toFixed(1)}`;
+  //     } catch (error) {
+  //       console.error('Erro ao atualizar zoom UI:', error);
+  //       zoomValueLabel.textContent = 'x1.0';
+  //     }
+  //   };
+
+  //   // Configuração inicial segura
+  //   const initZoom = () => {
+  //     try {
+  //       // Atualiza com capacidades reais se disponível
+  //       if (SCamera.captureController?.capabilities?.zoom) {
+  //         zoomMin = SCamera.captureController.capabilities.zoom.min || zoomMin;
+  //         zoomMax = SCamera.captureController.capabilities.zoom.max || zoomMax;
+  //       }
+
+  //       // Usa o valor atual ou padrão
+  //       const initialZoom = SCamera.currentConfig?.zoom || zoomMin;
+  //       updateUI(initialZoom);
+  //     } catch (error) {
+  //       console.error('Erro ao inicializar zoom:', error);
+  //       updateUI(zoomMin);
+  //     }
+  //   };
+
+  //   // Handler de toque seguro
+  //   const handleTouch = (e) => {
+  //     try {
+  //       e.preventDefault();
+  //       const rect = sliderTrack.getBoundingClientRect();
+  //       const touchX = e.touches[0].clientX;
+  //       const percent = Math.max(0, Math.min(1, (touchX - rect.left) / rect.width));
+  //       const zoomValue = zoomMin + percent * (zoomMax - zoomMin);
+        
+  //       SCamera.setZoom(zoomValue)
+  //         .then(() => updateUI(zoomValue))
+  //         .catch(err => console.error('Erro ao definir zoom:', err));
+  //     } catch (error) {
+  //       console.error('Erro no handler de toque:', error);
+  //     }
+  //   };
+
+  //   // Configura listeners
+  //   sliderTrack.addEventListener('touchstart', handleTouch, { passive: false });
+  //   sliderTrack.addEventListener('touchmove', handleTouch, { passive: false });
+
+  //   // Configura callback seguro
+  //   SCamera.onZoomChange = (zoom) => {
+  //     try {
+  //       updateUI(zoom);
+  //     } catch (error) {
+  //       console.error('Erro no callback de zoom:', error);
+  //     }
+  //   };
+
+  //   // Inicializa
+  //   initZoom();
+
+  //   return zoomContainer;
+  // }
 
   showPhotoPreview(photoBlob) {
     // esconder visualização da câmera
@@ -461,39 +460,5 @@ class SCameraUIController {
       errorContainer.remove();
       // SCamera.startCamera();
     });
-  }
-
-  setupEventListeners() {
-    // toque para controles móveis
-    if (this.isMobile) {
-      let touchStartY = 0;
-      let touchStartZoom = 1;
-      
-      document.addEventListener('touchstart', (e) => {
-        if (e.touches.length === 2) {
-          // Pinch zoom
-          touchStartZoom = SCamera.currentConfig.zoom;
-        } else if (e.touches.length === 1) {
-          touchStartY = e.touches[0].clientY;
-        }
-      }, { passive: true });
-      
-      document.addEventListener('touchmove', (e) => {
-        if (e.touches.length === 2) {
-          // Calcular distância entre dedos para zoom
-          const dist = Math.hypot(
-            e.touches[0].clientX - e.touches[1].clientX,
-            e.touches[0].clientY - e.touches[1].clientY
-          );
-          const startDist = Math.hypot(
-            e.touches[0].clientX - e.touches[1].clientX,
-            e.touches[0].clientY - e.touches[1].clientY
-          );
-          
-          const zoom = touchStartZoom * (dist / startDist);
-          SCamera.setZoom(Math.max(1, Math.min(3, zoom)));
-        }
-      }, { passive: true });
-    }
   }
 }
