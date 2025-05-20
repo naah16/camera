@@ -193,7 +193,7 @@ class SCameraUIController {
     flashBtn.addEventListener('click', () => {
       const isFlashOn = SCamera.currentConfig.flash;
       SCamera.currentConfig.flash = isFlashOn;
-      flashBtn.innerHTML = isFlashOn ? svgEnabled : svgDisabled;
+      flashBtn.innerHTML = isFlashOn ? svgDisabled : svgEnabled;
     });
     
     return flashBtn;
