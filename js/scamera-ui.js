@@ -236,15 +236,15 @@ class SCameraUIController {
   createZoomSliderUI() {
     const zoomContainer = document.createElement('div');
     zoomContainer.className = 'zoom-slider-container';
-    
-    // Só mostra se não for câmera frontal
+
+    // Verificação adicional para câmera frontal
     if (SCamera.currentConfig.facingMode === 'user') {
       zoomContainer.style.display = 'none';
+      return zoomContainer; // Retorna early se for câmera frontal
     }
 
     const zoomValueLabel = document.createElement('div');
     zoomValueLabel.className = 'zoom-value-label';
-    zoomValueLabel.textContent = `x${SCamera.currentConfig.zoom.toFixed(1)}`;
 
     const sliderTrack = document.createElement('div');
     sliderTrack.className = 'zoom-slider-track';
@@ -256,45 +256,77 @@ class SCameraUIController {
     zoomContainer.appendChild(zoomValueLabel);
     zoomContainer.appendChild(sliderTrack);
 
-    // Configuração inicial
+    // Valores padrão seguros
     let zoomMin = 1.0;
     let zoomMax = 3.0;
-    
-    // Atualizar com capacidades reais
-    if (SCamera.captureController.capabilities?.zoom) {
-      zoomMin = SCamera.captureController.capabilities.zoom.min;
-      zoomMax = SCamera.captureController.capabilities.zoom.max;
-    }
+    let currentZoom = 1.0;
 
+    // Função segura para atualizar UI
     const updateUI = (zoom) => {
-      const normalized = Math.max(0, Math.min(1, (zoom - zoomMin) / (zoomMax - zoomMin)));
-      indicator.style.left = `${normalized * 100}%`;
-      zoomValueLabel.textContent = `x${zoom.toFixed(1)}`;
+      try {
+        // Garante que zoom é um número válido
+        const safeZoom = Number(zoom) || zoomMin;
+        currentZoom = Math.max(zoomMin, Math.min(zoomMax, safeZoom));
+        
+        const normalized = (currentZoom - zoomMin) / (zoomMax - zoomMin);
+        indicator.style.left = `${normalized * 100}%`;
+        zoomValueLabel.textContent = `x${currentZoom.toFixed(1)}`;
+      } catch (error) {
+        console.error('Erro ao atualizar zoom UI:', error);
+        zoomValueLabel.textContent = 'x1.0';
+      }
     };
 
-    // Handler de toque
+    // Configuração inicial segura
+    const initZoom = () => {
+      try {
+        // Atualiza com capacidades reais se disponível
+        if (SCamera.captureController?.capabilities?.zoom) {
+          zoomMin = SCamera.captureController.capabilities.zoom.min || zoomMin;
+          zoomMax = SCamera.captureController.capabilities.zoom.max || zoomMax;
+        }
+
+        // Usa o valor atual ou padrão
+        const initialZoom = SCamera.currentConfig?.zoom || zoomMin;
+        updateUI(initialZoom);
+      } catch (error) {
+        console.error('Erro ao inicializar zoom:', error);
+        updateUI(zoomMin);
+      }
+    };
+
+    // Handler de toque seguro
     const handleTouch = (e) => {
-      e.preventDefault();
-      const rect = sliderTrack.getBoundingClientRect();
-      const touchX = e.touches[0].clientX;
-      const percent = Math.max(0, Math.min(1, (touchX - rect.left) / rect.width));
-      const zoomValue = zoomMin + percent * (zoomMax - zoomMin);
-      
-      SCamera.setZoom(zoomValue)
-        .then(() => updateUI(zoomValue))
-        .catch(console.error);
+      try {
+        e.preventDefault();
+        const rect = sliderTrack.getBoundingClientRect();
+        const touchX = e.touches[0].clientX;
+        const percent = Math.max(0, Math.min(1, (touchX - rect.left) / rect.width));
+        const zoomValue = zoomMin + percent * (zoomMax - zoomMin);
+        
+        SCamera.setZoom(zoomValue)
+          .then(() => updateUI(zoomValue))
+          .catch(err => console.error('Erro ao definir zoom:', err));
+      } catch (error) {
+        console.error('Erro no handler de toque:', error);
+      }
     };
 
+    // Configura listeners
     sliderTrack.addEventListener('touchstart', handleTouch, { passive: false });
     sliderTrack.addEventListener('touchmove', handleTouch, { passive: false });
 
-    // Atualizar quando o zoom mudar externamente
+    // Configura callback seguro
     SCamera.onZoomChange = (zoom) => {
-      updateUI(zoom);
+      try {
+        updateUI(zoom);
+      } catch (error) {
+        console.error('Erro no callback de zoom:', error);
+      }
     };
 
-    // Posição inicial
-    updateUI(SCamera.currentConfig.zoom);
+    // Inicializa
+    initZoom();
 
     return zoomContainer;
   }

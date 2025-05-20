@@ -62,17 +62,37 @@ let SCamera = {
   
   setZoom: async (zoomLevel) => {
     try {
-      const newZoom = await SCamera.captureController.setZoom(zoomLevel);
+      const safeZoom = Math.max(1, Math.min(3, Number(zoomLevel) || 1));
+      
+      const newZoom = await SCamera.captureController.setZoom(safeZoom);
       SCamera.currentConfig.zoom = newZoom;
-      if (SCamera.onZoomChange) {
-        SCamera.onZoomChange(newZoom);
+      
+      // Chamada segura para o callback
+      if (typeof SCamera.onZoomChange === 'function') {
+        try {
+          SCamera.onZoomChange(newZoom);
+        } catch (callbackError) {
+          console.error('Erro no callback de zoom:', callbackError);
+        }
       }
+      
       return newZoom;
     } catch (error) {
       console.error('Error setting zoom:', error);
       throw error;
     }
   },
+
+  // setZoom: async (zoomLevel) => {
+  //   try {
+  //     const newZoom = await SCamera.captureController.setZoom(zoomLevel);
+  //     SCamera.currentConfig.zoom = newZoom;
+  //     return newZoom;
+  //   } catch (error) {
+  //     console.error('Error setting zoom:', error);
+  //     throw error;
+  //   }
+  // },
   
   toggleFlash: async () => {
     try {
