@@ -61,7 +61,7 @@ class SCameraUIController {
     const flashBtn = this.createFlashBtn();
     flashBtn.className += ' mobile-flash';
     
-    const zoomControl = this.createZoomControl();
+    const zoomControl = this.createZoomDial();
     zoomControl.className += ' mobile-zoom';
     
     actionsContainer.appendChild(flashBtn);
@@ -195,42 +195,105 @@ class SCameraUIController {
     return flashBtn;
   }
 
-  createZoomControl() {
-    const zoomControl = document.createElement('div');
-    const zoomSlider = document.createElement('input');
-    const zoomLevel = document.createElement('div');
+  // createZoomControl() {
+  //   const zoomControl = document.createElement('div');
+  //   const zoomSlider = document.createElement('input');
+  //   const zoomLevel = document.createElement('div');
     
-    zoomControl.className = 'zoom-control';
-    zoomSlider.style.display = 'none';
-    zoomSlider.id = 'zoom-slider';
-    zoomSlider.type = 'range';
-    zoomSlider.min = '1';
-    zoomSlider.max = '3';
-    zoomSlider.step = '0.1';
-    zoomSlider.value = '1';
+  //   zoomControl.className = 'zoom-control';
+  //   zoomSlider.style.display = 'none';
+  //   zoomSlider.id = 'zoom-slider';
+  //   zoomSlider.type = 'range';
+  //   zoomSlider.min = '1';
+  //   zoomSlider.max = '3';
+  //   zoomSlider.step = '0.1';
+  //   zoomSlider.value = '1';
     
-    zoomLevel.className = 'zoom-level';
-    zoomLevel.textContent = 'x1.0';
+  //   zoomLevel.className = 'zoom-level';
+  //   zoomLevel.textContent = 'x1.0';
 
-    //adicionar toggle para abrir o zoomSlider
-    zoomLevel.addEventListener('click', () => {
-      if (zoomSlider.style.display === 'none') {
-        zoomSlider.style.display = 'block';
-      } else {
-        zoomSlider.style.display = 'none';
-      }
-    });
+  //   //adicionar toggle para abrir o zoomSlider
+  //   zoomLevel.addEventListener('click', () => {
+  //     if (zoomSlider.style.display === 'none') {
+  //       zoomSlider.style.display = 'block';
+  //     } else {
+  //       zoomSlider.style.display = 'none';
+  //     }
+  //   });
 
-    zoomControl.appendChild(zoomSlider);
-    zoomControl.appendChild(zoomLevel);
+  //   zoomControl.appendChild(zoomSlider);
+  //   zoomControl.appendChild(zoomLevel);
 
+  //   if (SCamera.currentConfig.facingMode === 'user') {
+  //     zoomControl.style.display = 'none';
+  //   } else {
+  //     zoomControl.style.display = 'flex';
+  //   }
+
+  //   return zoomControl;
+  // }
+
+  createZoomDial() {
+    const dialContainer = document.createElement('div');
+    dialContainer.className = 'zoom-dial-container';
+
+    // Só mostra se for câmera traseira
     if (SCamera.currentConfig.facingMode === 'user') {
-      zoomControl.style.display = 'none';
-    } else {
-      zoomControl.style.display = 'flex';
+      dialContainer.style.display = 'none';
+      return dialContainer;
     }
 
-    return zoomControl;
+    const dial = document.createElement('div');
+    dial.className = 'zoom-dial';
+
+    const zoomLabel = document.createElement('div');
+    zoomLabel.className = 'zoom-dial-label';
+    zoomLabel.textContent = 'x1.0';
+
+    dialContainer.appendChild(dial);
+    dialContainer.appendChild(zoomLabel);
+
+    // Lógica de zoom
+    let currentZoom = 1.0;
+    const minZoom = 1.0;
+    const maxZoom = 3.0;
+
+    let lastAngle = 0;
+    let isTouching = false;
+
+    const updateZoom = (angleDiff) => {
+      currentZoom += angleDiff * 0.01;
+      currentZoom = Math.max(minZoom, Math.min(maxZoom, currentZoom));
+      zoomLabel.textContent = `x${currentZoom.toFixed(1)}`;
+      SCamera.setZoom(currentZoom);
+    };
+
+    const getAngle = (x, y, centerX, centerY) => {
+      return Math.atan2(y - centerY, x - centerX) * (180 / Math.PI);
+    };
+
+    dial.addEventListener('touchstart', (e) => {
+      isTouching = true;
+      const touch = e.touches[0];
+      const rect = dial.getBoundingClientRect();
+      lastAngle = getAngle(touch.clientX, touch.clientY, rect.left + rect.width / 2, rect.top + rect.height / 2);
+    });
+
+    dial.addEventListener('touchmove', (e) => {
+      if (!isTouching) return;
+      const touch = e.touches[0];
+      const rect = dial.getBoundingClientRect();
+      const angle = getAngle(touch.clientX, touch.clientY, rect.left + rect.width / 2, rect.top + rect.height / 2);
+      const angleDiff = angle - lastAngle;
+      lastAngle = angle;
+      updateZoom(angleDiff);
+    });
+
+    dial.addEventListener('touchend', () => {
+      isTouching = false;
+    });
+
+    return dialContainer;
   }
 
   showPhotoPreview(photoBlob) {
