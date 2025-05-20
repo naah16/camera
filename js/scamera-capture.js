@@ -59,6 +59,13 @@ class SCameraCaptureController {
       if ('ImageCapture' in window) {
         this.imageCapture = new ImageCapture(this.videoTrack);
       }
+
+      const videoElement = document.querySelector('.camera-preview');
+      if (this.capabilities?.facingMode == 'user') {
+        videoElement.style.transform = 'scaleX(-1)';
+      } else {
+        videoElement.style.transform = 'scaleX(1)';
+      }
       
       this.capabilities = this.videoTrack.getCapabilities ? this.videoTrack.getCapabilities() : null;
       this.settings = this.videoTrack.getSettings();
@@ -102,12 +109,12 @@ class SCameraCaptureController {
     console.log('Câmera atual:', SCamera.devices.cameras[currentIndex].label);
 
     SCamera.currentConfig.facingMode = SCamera.currentConfig.facingMode == "user" ? "environment" : "user";
-
+    
+    const videoElement = document.querySelector('.camera-preview');
     if (SCamera.currentConfig.facingMode == "user") {
-      const videoElement = document.querySelector('.camera-preview');
-      if (videoElement) {
-        videoElement.style.transform = 'scaleX(-1)';
-      }
+      videoElement.style.transform = 'scaleX(-1)';
+    } else {
+      videoElement.style.transform = 'scaleX(1)';
     }
 
     try {

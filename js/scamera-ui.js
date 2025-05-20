@@ -26,8 +26,10 @@ class SCameraUIController {
     videoElement.autoplay = true;
     videoElement.playsInline = true;
 
-    if(SCamera.currentConfig.facingMode === 'user') {
-      videoElement.style.transform = 'scale(-1, 1)';
+    if (SCamera.currentConfig.facingMode == "user") {
+      videoElement.style.transform = 'scaleX(-1)';
+    } else {
+      videoElement.style.transform = 'scaleX(1)';
     }
     
     cameraContainer.appendChild(cameraBody);
