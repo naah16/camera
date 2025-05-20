@@ -2,11 +2,72 @@ class SCameraUIController {
   constructor() {
     this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     this.photoPreview = null;
+    this.currentOrientation = this._getOrientation();
+    this.setupOrientationWatcher();
   }
 
+  
   init() {
     this.createCameraPreview();
     this.setupEventListeners();
+    this.setupScreenOrientation();
+  }
+
+  _getOrientation() {
+    return window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
+  }
+
+  setupOrientationWatcher() {
+    if (!this.isMobile) return;
+
+    window.addEventListener('resize', () => {
+      const newOrientation = this._getOrientation();
+      if (newOrientation !== this.currentOrientation) {
+        this.currentOrientation = newOrientation;
+        this._handleOrientationChange();
+      }
+    });
+  }
+
+  _handleOrientationChange() {
+    const videoElement = document.querySelector('.camera-preview');
+    if (!videoElement) return;
+
+    // Ajustar transformação para câmera frontal
+    if (SCamera.currentConfig.facingMode === 'user') {
+      videoElement.style.transform = this.currentOrientation === 'landscape' 
+        ? 'scale(-1, 1) rotate(0deg)' 
+        : 'scale(-1, 1)';
+    }
+
+    // Ajustar controles específicos para orientação
+    const zoomControl = document.querySelector('.zoom-control');
+    if (zoomControl) {
+      if (this.currentOrientation === 'landscape') {
+        zoomControl.style.right = '20px';
+        zoomControl.style.bottom = '50%';
+        zoomControl.style.transform = 'translateY(50%)';
+      } else {
+        zoomControl.style.right = 'unset';
+        zoomControl.style.bottom = '80px';
+        zoomControl.style.transform = 'none';
+      }
+    }
+  }
+
+  setupScreenOrientation() {
+    if (!screen.orientation) return;
+
+    screen.orientation.addEventListener('change', () => {
+      const angle = screen.orientation.angle;
+      console.log('Ângulo de rotação:', angle);
+      
+      // Ajustar elementos conforme necessário
+      const video = document.querySelector('.camera-preview');
+      if (video) {
+        video.style.transform = `rotate(${angle}deg)`;
+      }
+    });
   }
 
   createCameraPreview() {
@@ -31,6 +92,7 @@ class SCameraUIController {
     }
     
     cameraContainer.appendChild(cameraBody);
+    cameraContainer.classList.add(this.currentOrientation);
     cameraBody.appendChild(viewfinderContainer);
     viewfinderContainer.appendChild(videoElement);
     
@@ -49,7 +111,7 @@ class SCameraUIController {
     const divEmpty = document.createElement('div');
     const actionsContainer = document.createElement('div');
 
-    controlsContainer.className = 'mobile-controls';
+    controlsContainer.className = `mobile-controls ${this.currentOrientation}`;
     actionsContainer.className = 'mobile-actions-container';
     divEmpty.style.width = '50px';
 
