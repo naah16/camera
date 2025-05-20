@@ -229,13 +229,8 @@ class SCameraCaptureController {
   }
 
   setZoom(configZoom) {
-    const zoomSlider = document.querySelector('#zoom-slider');
-    const zoomControl = document.querySelector('.zoom-control');
-    const zoomLevel = document.querySelector('.zoom-level');
-
     if (!this.videoTrack || !this.capabilities?.zoom) {
       console.log('Zoom not supported');
-      zoomControl.style.display = 'none';
       return;
     }
     
@@ -256,13 +251,11 @@ class SCameraCaptureController {
             const normalizedZoom = zoomValue / this.capabilities.zoom.min;
             zoomLevel.textContent = `x${normalizedZoom.toFixed(1)}`;
           }).catch(error => {
-            zoomControl.style.display = 'none';
             console.error('Error setting zoom:', error);
           });
         }
       }
     } else {
-      zoomControl.style.display = 'none';
       console.log('Zoom not supported on this device');
     }
   }

@@ -61,7 +61,7 @@ class SCameraUIController {
     const flashBtn = this.createFlashBtn();
     flashBtn.className += ' mobile-flash';
     
-    const zoomControl = this.createZoomDial();
+    const zoomControl = this.createZoomSliderUI();
     zoomControl.className += ' mobile-zoom';
     
     actionsContainer.appendChild(flashBtn);
@@ -233,67 +233,60 @@ class SCameraUIController {
   //   return zoomControl;
   // }
 
-  createZoomDial() {
-    const dialContainer = document.createElement('div');
-    dialContainer.className = 'zoom-dial-container';
+  createZoomSliderUI() {
+    const zoomContainer = document.createElement('div');
+    zoomContainer.className = 'zoom-slider-container';
 
-    // Só mostra se for câmera traseira
-    if (SCamera.currentConfig.facingMode === 'user') {
-      dialContainer.style.display = 'none';
-      return dialContainer;
+    const zoomValueLabel = document.createElement('div');
+    zoomValueLabel.className = 'zoom-value-label';
+    zoomValueLabel.textContent = 'x1.0';
+
+    const sliderTrack = document.createElement('div');
+    sliderTrack.className = 'zoom-slider-track';
+
+    const indicator = document.createElement('div');
+    indicator.className = 'zoom-indicator';
+
+    sliderTrack.appendChild(indicator);
+    zoomContainer.appendChild(zoomValueLabel);
+    zoomContainer.appendChild(sliderTrack);
+
+    // Inicializar posição
+    let zoomMin = 1.0;
+    let zoomMax = 3.0;
+    let currentZoom = 1.0;
+
+    const updateUI = (zoom) => {
+      currentZoom = zoom;
+      const normalized = (zoom - zoomMin) / (zoomMax - zoomMin);
+      indicator.style.left = `${normalized * 100}%`;
+      zoomValueLabel.textContent = `x${zoom.toFixed(1)}`;
+    };
+
+    // Touch para controle de zoom
+    sliderTrack.addEventListener('touchstart', handleTouch);
+    sliderTrack.addEventListener('touchmove', handleTouch);
+
+    function handleTouch(e) {
+      e.preventDefault();
+      const rect = sliderTrack.getBoundingClientRect();
+      const touchX = e.touches[0].clientX;
+      const percent = Math.max(0, Math.min(1, (touchX - rect.left) / rect.width));
+      const zoomValue = zoomMin + percent * (zoomMax - zoomMin);
+      
+      SCamera.setZoom(zoomValue); // Aqui você chama a função real que aplica o zoom
+      updateUI(zoomValue);
     }
 
-    const dial = document.createElement('div');
-    dial.className = 'zoom-dial';
+    // Atualizar limites reais (após carregar capabilities)
+    const zoomCapabilities = SCamera.capabilities?.zoom;
+    if (zoomCapabilities) {
+      zoomMin = zoomCapabilities.min;
+      zoomMax = zoomCapabilities.max;
+      updateUI(SCamera.currentConfig.zoom || zoomMin);
+    }
 
-    const zoomLabel = document.createElement('div');
-    zoomLabel.className = 'zoom-dial-label';
-    zoomLabel.textContent = 'x1.0';
-
-    dialContainer.appendChild(dial);
-    dialContainer.appendChild(zoomLabel);
-
-    // Lógica de zoom
-    let currentZoom = 1.0;
-    const minZoom = 1.0;
-    const maxZoom = 3.0;
-
-    let lastAngle = 0;
-    let isTouching = false;
-
-    const updateZoom = (angleDiff) => {
-      currentZoom += angleDiff * 0.01;
-      currentZoom = Math.max(minZoom, Math.min(maxZoom, currentZoom));
-      zoomLabel.textContent = `x${currentZoom.toFixed(1)}`;
-      SCamera.setZoom(currentZoom);
-    };
-
-    const getAngle = (x, y, centerX, centerY) => {
-      return Math.atan2(y - centerY, x - centerX) * (180 / Math.PI);
-    };
-
-    dial.addEventListener('touchstart', (e) => {
-      isTouching = true;
-      const touch = e.touches[0];
-      const rect = dial.getBoundingClientRect();
-      lastAngle = getAngle(touch.clientX, touch.clientY, rect.left + rect.width / 2, rect.top + rect.height / 2);
-    });
-
-    dial.addEventListener('touchmove', (e) => {
-      if (!isTouching) return;
-      const touch = e.touches[0];
-      const rect = dial.getBoundingClientRect();
-      const angle = getAngle(touch.clientX, touch.clientY, rect.left + rect.width / 2, rect.top + rect.height / 2);
-      const angleDiff = angle - lastAngle;
-      lastAngle = angle;
-      updateZoom(angleDiff);
-    });
-
-    dial.addEventListener('touchend', () => {
-      isTouching = false;
-    });
-
-    return dialContainer;
+    return zoomContainer;
   }
 
   showPhotoPreview(photoBlob) {
