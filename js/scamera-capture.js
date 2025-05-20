@@ -82,7 +82,7 @@ class SCameraCaptureController {
       return stream;
     } catch (error) {
       alert('Erro ao acessar a câmera. Verifique as permissões ou se existe uma câmera disponível.');
-      console.error('Error accessing camera:', error);
+      console.error('Error accessing camera:', error.message);
       throw error;
     } finally {
       // Atualiza a interface do usuário
