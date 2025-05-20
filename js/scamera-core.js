@@ -12,6 +12,7 @@ let SCamera = {
     flash: false,
     zoom: 1
   },
+  onZoomChange: null,
   
   init: async () => {
     SCamera.uiController = new SCameraUIController();
@@ -63,6 +64,9 @@ let SCamera = {
     try {
       const newZoom = await SCamera.captureController.setZoom(zoomLevel);
       SCamera.currentConfig.zoom = newZoom;
+      if (SCamera.onZoomChange) {
+        SCamera.onZoomChange(newZoom);
+      }
       return newZoom;
     } catch (error) {
       console.error('Error setting zoom:', error);

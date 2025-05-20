@@ -236,10 +236,15 @@ class SCameraUIController {
   createZoomSliderUI() {
     const zoomContainer = document.createElement('div');
     zoomContainer.className = 'zoom-slider-container';
+    
+    // Só mostra se não for câmera frontal
+    if (SCamera.currentConfig.facingMode === 'user') {
+      zoomContainer.style.display = 'none';
+    }
 
     const zoomValueLabel = document.createElement('div');
     zoomValueLabel.className = 'zoom-value-label';
-    zoomValueLabel.textContent = 'x1.0';
+    zoomValueLabel.textContent = `x${SCamera.currentConfig.zoom.toFixed(1)}`;
 
     const sliderTrack = document.createElement('div');
     sliderTrack.className = 'zoom-slider-track';
@@ -251,40 +256,45 @@ class SCameraUIController {
     zoomContainer.appendChild(zoomValueLabel);
     zoomContainer.appendChild(sliderTrack);
 
-    // Inicializar posição
+    // Configuração inicial
     let zoomMin = 1.0;
     let zoomMax = 3.0;
-    let currentZoom = 1.0;
+    
+    // Atualizar com capacidades reais
+    if (SCamera.captureController.capabilities?.zoom) {
+      zoomMin = SCamera.captureController.capabilities.zoom.min;
+      zoomMax = SCamera.captureController.capabilities.zoom.max;
+    }
 
     const updateUI = (zoom) => {
-      currentZoom = zoom;
-      const normalized = (zoom - zoomMin) / (zoomMax - zoomMin);
+      const normalized = Math.max(0, Math.min(1, (zoom - zoomMin) / (zoomMax - zoomMin)));
       indicator.style.left = `${normalized * 100}%`;
       zoomValueLabel.textContent = `x${zoom.toFixed(1)}`;
     };
 
-    // Touch para controle de zoom
-    sliderTrack.addEventListener('touchstart', handleTouch);
-    sliderTrack.addEventListener('touchmove', handleTouch);
-
-    function handleTouch(e) {
+    // Handler de toque
+    const handleTouch = (e) => {
       e.preventDefault();
       const rect = sliderTrack.getBoundingClientRect();
       const touchX = e.touches[0].clientX;
       const percent = Math.max(0, Math.min(1, (touchX - rect.left) / rect.width));
       const zoomValue = zoomMin + percent * (zoomMax - zoomMin);
       
-      SCamera.setZoom(zoomValue); // Aqui você chama a função real que aplica o zoom
-      updateUI(zoomValue);
-    }
+      SCamera.setZoom(zoomValue)
+        .then(() => updateUI(zoomValue))
+        .catch(console.error);
+    };
 
-    // Atualizar limites reais (após carregar capabilities)
-    const zoomCapabilities = SCamera.capabilities?.zoom;
-    if (zoomCapabilities) {
-      zoomMin = zoomCapabilities.min;
-      zoomMax = zoomCapabilities.max;
-      updateUI(SCamera.currentConfig.zoom || zoomMin);
-    }
+    sliderTrack.addEventListener('touchstart', handleTouch, { passive: false });
+    sliderTrack.addEventListener('touchmove', handleTouch, { passive: false });
+
+    // Atualizar quando o zoom mudar externamente
+    SCamera.onZoomChange = (zoom) => {
+      updateUI(zoom);
+    };
+
+    // Posição inicial
+    updateUI(SCamera.currentConfig.zoom);
 
     return zoomContainer;
   }
