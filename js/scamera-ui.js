@@ -248,7 +248,7 @@ class SCameraUIController {
       const img = document.createElement('img');
       img.className = 'captured-photo';
       
-      const actions = this.createPhotoActions();
+      const actions = this.isMobile ? this.createPhotoActionsMobile() : this.createPhotoActionsDesktop();
       
       this.photoPreview.appendChild(img);
       this.photoPreview.appendChild(actions);
@@ -263,22 +263,42 @@ class SCameraUIController {
     img.dataset.blobUrl = img.src;
   }
 
-  createPhotoActions() {
+  createPhotoActionsMobile() {
     const actions = document.createElement('div');
     actions.className = 'photo-actions';
     
     const closeBtn = document.createElement('button');
     closeBtn.className = 'photo-action-btn close-btn';
-    closeBtn.innerHTML = '<i class="fas fa-times"></i>';
+    closeBtn.innerHTML = 'Repetir';
     closeBtn.addEventListener('click', () => this.hidePhotoPreview());
 
     const downloadBtn = document.createElement('button');
     downloadBtn.className = 'photo-action-btn download-btn';
+    downloadBtn.innerHTML = 'Usar foto';
+    downloadBtn.addEventListener('click', () => this.downloadPhoto());
+    
+    actions.appendChild(closeBtn);
+    actions.appendChild(downloadBtn);
+    
+    return actions;
+  }
+
+  createPhotoActionsDesktop() {
+    const actions = document.createElement('div');
+    actions.className = 'photo-actions-desktop';
+    
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'photo-action-btn-desktop close-btn';
+    closeBtn.innerHTML = '<i class="fas fa-times"></i>';
+    closeBtn.addEventListener('click', () => this.hidePhotoPreview());
+
+    const downloadBtn = document.createElement('button');
+    downloadBtn.className = 'photo-action-btn-desktop download-btn';
     downloadBtn.innerHTML = '<i class="fas fa-download"></i>';
     downloadBtn.addEventListener('click', () => this.downloadPhoto());
     
-    actions.appendChild(downloadBtn);
     actions.appendChild(closeBtn);
+    actions.appendChild(downloadBtn);
     
     return actions;
   }

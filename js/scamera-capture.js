@@ -59,6 +59,13 @@ class SCameraCaptureController {
       if ('ImageCapture' in window) {
         this.imageCapture = new ImageCapture(this.videoTrack);
       }
+
+      if (this.capabilities?.facingMode == 'user') {
+        const videoElement = document.querySelector('.camera-preview');
+        if (videoElement) {
+          videoElement.style.transform = 'scaleX(-1)';
+        }
+      }
       
       this.capabilities = this.videoTrack.getCapabilities ? this.videoTrack.getCapabilities() : null;
       this.settings = this.videoTrack.getSettings();
