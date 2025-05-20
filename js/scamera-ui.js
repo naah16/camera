@@ -46,15 +46,12 @@ class SCameraUIController {
 
   async createMobileControls(container) {
     const controlsContainer = document.createElement('div');
-    const divEmpty = document.createElement('div');
     const actionsContainer = document.createElement('div');
 
     controlsContainer.className = 'mobile-controls';
     actionsContainer.className = 'mobile-actions-container';
-    divEmpty.style.width = '50px';
 
     const shutterBtn = this.createShutterBtn();
-    shutterBtn.className += ' mobile-shutter';
     
     const switchCamBtn = await this.createSwitchCamControl();
     switchCamBtn.className += ' mobile-switch';
@@ -65,12 +62,11 @@ class SCameraUIController {
     const zoomControl = this.createZoomControl();
     zoomControl.className += ' mobile-zoom';
     
-    actionsContainer.appendChild(divEmpty);
+    actionsContainer.appendChild(flashBtn);
     actionsContainer.appendChild(shutterBtn);
     actionsContainer.appendChild(switchCamBtn);
     controlsContainer.appendChild(zoomControl);
     controlsContainer.appendChild(actionsContainer);
-    container.appendChild(flashBtn);
     container.appendChild(controlsContainer);
   }
 
@@ -92,7 +88,6 @@ class SCameraUIController {
     topBar.appendChild(zoomControl);
     
     const shutterBtn = this.createShutterBtn();
-    shutterBtn.className += ' desktop-shutter';
     
     controlsContainer.appendChild(topBar);
     controlsContainer.appendChild(shutterBtn);
@@ -101,11 +96,8 @@ class SCameraUIController {
 
   createShutterBtn() {
     const shutterBtn = document.createElement('button');
-    const shutterInner = document.createElement('div');
     shutterBtn.id = 'shutter-btn';
     shutterBtn.className = 'shutter-btn';
-    shutterInner.className = 'shutter-inner';
-    shutterBtn.appendChild(shutterInner);
     
     shutterBtn.addEventListener('click', async () => {
       try {
@@ -125,13 +117,14 @@ class SCameraUIController {
   async createSwitchCamControl() {
     if(this.isMobile) {
       const switchCamBtn = document.createElement('button');
-      const switchCamInner = document.createElement('i');
       
       switchCamBtn.id = 'switch-cam-btn';
       switchCamBtn.className = 'switch-cam-btn';
-      switchCamInner.className = 'fas fa-sync-alt';
-      
-      switchCamBtn.appendChild(switchCamInner);
+      switchCamBtn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icons-actions-container"><title>cached</title>
+          <path d="M19,8L15,12H18A6,6 0 0,1 12,18C11,18 10.03,17.75 9.2,17.3L7.74,18.76C8.97,19.54 10.43,20 12,20A8,8 0 0,0 20,12H23M6,12A6,6 0 0,1 12,6C13,6 13.97,6.25 14.8,6.7L16.26,5.24C15.03,4.46 13.57,4 12,4A8,8 0 0,0 4,12H1L5,16L9,12" />
+        </svg>
+      `;
       
       switchCamBtn.addEventListener('click', async () => {
         try {
@@ -182,17 +175,25 @@ class SCameraUIController {
 
   createFlashBtn() {
     const flashBtn = document.createElement('button');
-    const flashIcon = document.createElement('i');
+    const svgEnabled = `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icons-actions-container"><title>flash</title>
+        <path d="M7,2V13H10V22L17,10H13L17,2H7Z" />
+      </svg>
+    `;
+    const svgDisabled = `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icons-actions-container"><title>flash-off</title>
+        <path d="M17,10H13L17,2H7V4.18L15.46,12.64M3.27,3L2,4.27L7,9.27V13H10V22L13.58,15.86L17.73,20L19,18.73L3.27,3Z" />
+      </svg>
+    `;
     
     flashBtn.id = 'flash-btn';
     flashBtn.className = 'flash-btn';
-    flashIcon.className = 'fas fa-bolt';
-    
-    flashBtn.appendChild(flashIcon);
-    
+    flashBtn.innerHTML = svgDisabled;
+
     flashBtn.addEventListener('click', () => {
-      const isFlashEnabled = SCamera.currentConfig.flash;
-      flashIcon.style.color = isFlashEnabled === true ? '' : '#FFD700';
+      const isFlashOn = SCamera.currentConfig.flash;
+      SCamera.currentConfig.flash = isFlashOn;
+      flashBtn.innerHTML = isFlashOn ? svgEnabled : svgDisabled;
     });
     
     return flashBtn;
@@ -289,12 +290,20 @@ class SCameraUIController {
     
     const closeBtn = document.createElement('button');
     closeBtn.className = 'photo-action-btn-desktop close-btn';
-    closeBtn.innerHTML = '<i class="fas fa-times"></i>';
+    closeBtn.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icons-actions-container"><title>close</title>
+        <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
+      </svg>
+    `;
     closeBtn.addEventListener('click', () => this.hidePhotoPreview());
 
     const downloadBtn = document.createElement('button');
     downloadBtn.className = 'photo-action-btn-desktop download-btn';
-    downloadBtn.innerHTML = '<i class="fas fa-download"></i>';
+    downloadBtn.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icons-actions-container"><title>download</title>
+        <path d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z" />
+      </svg>
+    `;
     downloadBtn.addEventListener('click', () => this.downloadPhoto());
     
     actions.appendChild(closeBtn);
@@ -341,7 +350,6 @@ class SCameraUIController {
     const errorContainer = document.createElement('div');
     errorContainer.className = 'camera-error';
     errorContainer.innerHTML = `
-      <i class="fas fa-camera-slash"></i>
       <p>Não foi possível acessar a câmera</p>
       <button id="retry-camera-btn">Tente novamente</button>
     `;

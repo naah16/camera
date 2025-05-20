@@ -69,6 +69,46 @@ body {
   border: none;
 }
 
+.icons-actions-container {
+  width: 20px;
+  fill: white;
+}
+
+/* Shutter Button */
+.shutter-btn {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background-color: #fff;
+  border: none;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease;
+  position: relative;
+}
+
+.shutter-btn:active {
+  transform: scale(0.95);
+}
+
+.shutter-btn.animate {
+  animation: pulse 0.4s ease;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(255, 255, 255, 0.4);
+  }
+  50% {
+    transform: scale(1.2);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(255, 255, 255, 0.4);
+  }
+}
+
 /* Mobile Controls */
 .mobile-controls {
   position: absolute;
@@ -92,26 +132,6 @@ body {
   width: 100%;
 }
 
-.mobile-shutter {
-  width: 60px;
-  height: 60px;
-  border-radius: 100%;
-  background-color: #fff;
-  border: 3px solid rgba(255, 255, 255, 0.3);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-}
-
-.mobile-shutter .shutter-inner {
-  width: 40px;
-  height: 40px;
-  border-radius: 100%;
-  background-color: #fff;
-  border: 2px solid rgba(0, 0, 0, 0.2);
-}
-
 .mobile-switch, .mobile-flash {
   width: 50px;
   height: 50px;
@@ -122,12 +142,6 @@ body {
   justify-content: center;
   align-items: center;
   border: none;
-}
-
-.mobile-flash {
-  left: 20px;
-  position: absolute;
-  top: 20px;
 }
 
 .mobile-zoom {
@@ -179,20 +193,12 @@ body {
 
 .desktop-top-bar {
   position: absolute;
-  top: 20px;
+  top: 0;
   right: 20px;
+  bottom: 0;
   display: flex;
   gap: 15px;
   align-items: center;
-}
-
-.desktop-shutter {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background-color: #fff;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  cursor: pointer;
 }
 
 .desktop-top-bar .flash-btn,
