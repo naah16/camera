@@ -80,14 +80,8 @@ class SCameraUIController {
     topBar.className = 'desktop-top-bar';
     
     const switchCamBtn = await this.createSwitchCamControl();
-
-    const flashBtn = this.createFlashBtn();
-    
-    const zoomControl = this.createZoomControl();
     
     topBar.appendChild(switchCamBtn);
-    topBar.appendChild(flashBtn);
-    topBar.appendChild(zoomControl);
     
     const shutterBtn = this.createShutterBtn();
     
@@ -229,6 +223,12 @@ class SCameraUIController {
 
     zoomControl.appendChild(zoomSlider);
     zoomControl.appendChild(zoomLevel);
+
+    if (SCamera.currentConfig.facingMode === 'user') {
+      zoomControl.style.display = 'none';
+    } else {
+      zoomControl.style.display = 'flex';
+    }
 
     return zoomControl;
   }

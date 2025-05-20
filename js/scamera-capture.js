@@ -8,6 +8,7 @@ class SCameraCaptureController {
     this.settings = null;
     this.currentZoom = 1;
     this.torchEnabled = false;
+    this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   }
 
   async init() {
@@ -46,12 +47,12 @@ class SCameraCaptureController {
       console.log("Capacidades da câmera:", this.capabilities);
 
       // Aplicar zoom atual se suportado
-      if (this.capabilities?.zoom) {
+      if (this.capabilities?.zoom && this.isMobile) {
         this.setZoom(this.currentZoom);
       }
 
       // Aplicar flash/torch se suportado
-      if (this.capabilities?.torch) {
+      if (this.capabilities?.torch && this.isMobile) {
         this.toggleFlash(this.torchEnabled);
       }
       
@@ -106,7 +107,6 @@ class SCameraCaptureController {
     const currentIndex = SCamera.devices.cameras.findIndex(
       cam => cam.deviceId === this.currentDeviceId
     );
-    console.log('Câmera atual:', SCamera.devices.cameras[currentIndex].label);
 
     SCamera.currentConfig.facingMode = SCamera.currentConfig.facingMode == "user" ? "environment" : "user";
     
