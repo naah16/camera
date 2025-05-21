@@ -187,10 +187,14 @@ class SCameraUIController {
 
     flashBtn.addEventListener('click', () => {
       if (!SCamera.captureController.capabilities?.torch) return;
-      SCamera.captureController.toggleFlash();
-      const isFlashOn = SCamera.currentConfig.flash;
-      SCamera.currentConfig.flash = isFlashOn;
-      flashBtn.innerHTML = isFlashOn ? svgDisabled : svgEnabled;
+
+      const isCurrentlyOn = SCamera.currentConfig.flash === true;
+      const newFlashState = !isCurrentlyOn;
+
+      SCamera.currentConfig.flash = newFlashState;
+      SCamera.captureController.toggleFlash(newFlashState);
+
+      flashBtn.innerHTML = newFlashState ? svgEnabled : svgDisabled;
     });
     
     return flashBtn;
