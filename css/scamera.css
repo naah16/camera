@@ -71,7 +71,7 @@ body {
 
 .zoom-slider-container {
   position: absolute;
-  bottom: 110px;
+  bottom: 100px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -87,12 +87,12 @@ body {
   font-size: 16px;
   padding: 4px 8px;
   border-radius: 10px;
-  margin-bottom: 8px;
+  margin-bottom: 15px;
 }
 
 .zoom-slider-track {
   position: relative;
-  width: 280px;
+  width: 90%;
   height: 2px;
   background: rgba(255, 255, 255, 0.3);
 }
