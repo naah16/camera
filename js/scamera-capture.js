@@ -208,7 +208,7 @@ class SCameraCaptureController {
   }
 
   setZoom(configZoom) {
-    const zoomSlider = document.querySelector('.zoom-slider');
+    const zoomSlider = document.querySelector('#zoom-slider');
     const zoomLevel = document.querySelector('.zoom-level');
     if (!this.videoTrack || !this.capabilities?.zoom) {
       console.log('Zoom not supported');
