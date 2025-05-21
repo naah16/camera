@@ -118,6 +118,12 @@ export default class SCameraUIController {
     shutterBtn.addEventListener('click', async () => {
       try {
         shutterBtn.disabled = true;
+        shutterBtn.classList.add('animate');
+
+        setTimeout(() => {
+          shutterBtn.classList.remove('animate');
+        }, 200);
+
         const photoBlob = await SCamera.capturePhoto();
         this.showPhotoPreview(photoBlob);
       } catch (error) {
