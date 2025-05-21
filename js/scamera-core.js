@@ -78,9 +78,6 @@ let SCamera = {
     try {
       const newState = !SCamera.currentConfig.flash;
       const success = await SCamera.captureController.toggleFlash(newState);
-      if (success) {
-        SCamera.currentConfig.flash = newState;
-      }
       return success;
     } catch (error) {
       console.error('Error toggling flash:', error);

@@ -244,20 +244,13 @@ class SCameraCaptureController {
       console.log('Flash/torch not supported');
       return false;
     }
-    
-    const flashBtn = document.querySelector('.flash-btn');
 
-    if (flashBtn) {
-      flashBtn.onclick = () => {
-        this.torchEnabled = !this.torchEnabled;
-        this.videoTrack.applyConstraints({
-          advanced: [{ torch: this.torchEnabled }]
-        }).then(() => {
-          SCamera.currentConfig.flash = this.torchEnabled;
-        }).catch(error => {
-          console.error('Error toggling flash:', error);
-        });
-      }
-    }
+    this.torchEnabled = state;
+    return this.videoTrack.applyConstraints({
+      advanced: [{ torch: this.torchEnabled }]
+    }).then(() => true).catch(error => {
+      console.error('Error toggling flash:', error);
+      return false;
+    });
   }
 }
