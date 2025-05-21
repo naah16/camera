@@ -229,14 +229,6 @@ class SCameraUIController {
     zoomControl.appendChild(zoomSlider);
     zoomControl.appendChild(zoomLevel);
 
-    zoomSlider.addEventListener('input', () => {
-      const zoomValue = parseFloat(zoomSlider.value);
-      SCamera.captureController.setZoom(zoomValue);
-      SCamera.currentConfig.zoom = zoomValue;
-      const normalizedZoom = zoomValue / SCamera.captureController.capabilities.zoom.min;
-      zoomLevel.textContent = `x${normalizedZoom.toFixed(1)}`;
-    });
-
     if (SCamera.currentConfig.facingMode === 'user') {
       zoomControl.style.display = 'none';
     } else {
