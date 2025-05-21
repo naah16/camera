@@ -1,7 +1,8 @@
-class SCameraUIController {
+export default class SCameraUIController {
   constructor() {
     this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     this.photoPreview = null;
+    this.blob = null;
   }
 
   init() {
@@ -98,6 +99,7 @@ class SCameraUIController {
       try {
         shutterBtn.disabled = true;
         const photoBlob = await SCamera.capturePhoto();
+        this.blob = photoBlob;
         this.showPhotoPreview(photoBlob);
       } catch (error) {
         console.error('Capture error:', error);
@@ -211,16 +213,22 @@ class SCameraUIController {
     const sliderTrack = document.createElement('div');
     sliderTrack.className = 'zoom-slider-track';
 
-    const indicator = document.createElement('div');
-    indicator.className = 'zoom-indicator';
+    // Indicador visual
+    const visualIndicator = document.createElement('div');
+    visualIndicator.className = 'zoom-indicator';
 
-    sliderTrack.appendChild(indicator);
+    // Indicador invisível (melhor usabilidade)
+    const touchArea = document.createElement('div');
+    touchArea.className = 'zoom-touch-area';
+
+    sliderTrack.appendChild(visualIndicator);
+    sliderTrack.appendChild(touchArea);
     zoomControl.appendChild(zoomValueLabel);
     zoomControl.appendChild(sliderTrack);
 
-    // Armazenar para uso posterior
+    // Salva referências
     this.zoomValueLabel = zoomValueLabel;
-    this.zoomIndicator = indicator;
+    this.zoomIndicator = visualIndicator;
     this.zoomTrack = sliderTrack;
 
     // Oculta se for câmera frontal
@@ -228,7 +236,9 @@ class SCameraUIController {
       zoomControl.style.display = 'none';
     }
 
-    // Adiciona evento de toque ou mouse para atualizar o zoom
+    // Define step fixo de 0.5
+    const STEP = 0.5;
+
     const handleZoomChange = (event) => {
       const rect = sliderTrack.getBoundingClientRect();
       const x = event.touches ? event.touches[0].clientX : event.clientX;
@@ -236,17 +246,21 @@ class SCameraUIController {
       const clamped = Math.min(Math.max(percent, 0), 1);
 
       const { min, max } = SCamera.captureController.capabilities.zoom;
-      const zoomValue = min + clamped * (max - min);
+      let rawZoom = min + clamped * (max - min);
+
+      // Aplica step de 0.5
+      const zoomValue = Math.round(rawZoom / STEP) * STEP;
 
       // Atualiza UI
-      indicator.style.left = `${clamped * 100}%`;
+      const percentAdjusted = (zoomValue - min) / (max - min);
+      visualIndicator.style.left = `${percentAdjusted * 100}%`;
       zoomValueLabel.textContent = `x${(zoomValue / min).toFixed(1)}`;
 
       // Aplica o zoom
       SCamera.captureController.setZoom(zoomValue);
     };
 
-    sliderTrack.addEventListener('mousedown', (e) => {
+    touchArea.addEventListener('mousedown', (e) => {
       handleZoomChange(e);
       document.addEventListener('mousemove', handleZoomChange);
       document.addEventListener('mouseup', () => {
@@ -254,8 +268,8 @@ class SCameraUIController {
       }, { once: true });
     });
 
-    sliderTrack.addEventListener('touchstart', handleZoomChange);
-    sliderTrack.addEventListener('touchmove', handleZoomChange);
+    touchArea.addEventListener('touchstart', handleZoomChange);
+    touchArea.addEventListener('touchmove', handleZoomChange);
 
     return zoomControl;
   }
@@ -305,7 +319,7 @@ class SCameraUIController {
     const downloadBtn = document.createElement('button');
     downloadBtn.className = 'photo-action-btn download-btn';
     downloadBtn.innerHTML = 'Usar foto';
-    downloadBtn.addEventListener('click', () => this.downloadPhoto());
+    downloadBtn.addEventListener('click', () => this.sendBlob());
     
     actions.appendChild(closeBtn);
     actions.appendChild(downloadBtn);
@@ -333,7 +347,7 @@ class SCameraUIController {
         <path d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z" />
       </svg>
     `;
-    downloadBtn.addEventListener('click', () => this.downloadPhoto());
+    downloadBtn.addEventListener('click', () => this.sendBlob());
     
     actions.appendChild(closeBtn);
     actions.appendChild(downloadBtn);
@@ -361,18 +375,13 @@ class SCameraUIController {
     }
   }
 
-  downloadPhoto() {
-    if (!this.photoPreview) return;
-    
-    const img = this.photoPreview.querySelector('.captured-photo');
-    if (!img || !img.src) return;
-    
-    const link = document.createElement('a');
-    link.href = img.src;
-    link.download = `photo_${Date.now()}.jpg`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  sendBlob() {
+    this.dispatchEvent(new CustomEvent('photoCaptured', {
+      detail: { blob: this.blob },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    }));
   }
 
   showCameraError(message = 'Não foi possível acessar a câmera') {

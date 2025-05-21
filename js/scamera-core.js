@@ -1,3 +1,6 @@
+import SCameraUIController from './scamera-ui.js';
+import SCameraCaptureController from './scamera-capture.js';
+
 let SCamera = {
   uiController: null,
   captureController: null,
@@ -85,7 +88,7 @@ let SCamera = {
     }
   },
 
-   listCameras: async () => {
+  listCameras: async () => {
     try {
       const devices = await navigator.mediaDevices.enumerateDevices();
       SCamera.devices.cameras = devices.filter(device => device.kind === 'videoinput');
@@ -95,4 +98,18 @@ let SCamera = {
       return [];
     }
   },
+
+  closeCamera: () => {
+    const existingContainer = document.querySelector('.camera-container');
+    if (existingContainer) {
+      this.stopCurrentStream();
+      existingContainer.remove();
+    }
+  },
+
+  stopCurrentStream: () => {
+    SCamera.captureController.stopCurrentStream();
+  }
 };
+
+window.SCamera = SCamera;

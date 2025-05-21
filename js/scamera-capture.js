@@ -1,4 +1,4 @@
-class SCameraCaptureController {
+export default class SCameraCaptureController {
   constructor() {
     this.currentStream = null;
     this.currentDeviceId = null;
@@ -199,8 +199,15 @@ class SCameraCaptureController {
           canvas.toBlob(resolve, 'image/jpeg', 1);
         });
       }
-      
-      return photoBlob;
+
+      const compressed = this.compress(
+        photoBlob,
+        "image/jpeg",
+        90,
+        1920
+      );
+
+      return compressed;
     } catch (error) {
       console.error('Error capturing photo:', error);
       throw error;
@@ -241,4 +248,228 @@ class SCameraCaptureController {
       return false;
     });
   }
+
+  imgIsProcessable = (mimeType) => {
+    const processable = ["image/jpeg", "image/png"];
+    return processable.includes(mimeType.toLowerCase());
+  };
+
+  readImg = async (originalBlob) => {
+    const reader = new FileReader();
+    const img = new Image();
+
+    let data = await new Promise((resolve, reject) => {
+      reader.onload = (event) => {
+        resolve(event.target.result);
+      };
+      reader.onerror = (error) => {
+        reject(error);
+      };
+      reader.readAsDataURL(originalBlob);
+    });
+
+    img.src = data;
+
+    await new Promise((resolve, reject) => {
+      img.onload = () => {
+        resolve();
+      };
+      img.onerror = () => {
+        reject("Erro ao carregar imagem");
+      };
+    }).catch((er) => {
+      throw new Error(er);
+    });
+
+    return img;
+  };
+
+  cropImage = async (originalBlob, mimeType, quality, resolution) => {
+    let img = originalBlob;
+    if (!(originalBlob instanceof Image)) {
+      img = await this.readImg(originalBlob);
+    }
+
+    let canvasProps = {
+      width: img.width,
+      height: img.height,
+    };
+    const landscape = img.height < img.width;
+    let biggerProp = landscape ? "width" : "height";
+    let smallerProp = landscape ? "height" : "width";
+
+    canvasProps[biggerProp] = resolution;
+    let scale = canvasProps[biggerProp] / img[biggerProp];
+    canvasProps[smallerProp] = img[smallerProp] * scale;
+    let resized = false;
+    if (canvasProps[smallerProp] < 40) {
+      canvasProps[smallerProp] = 40;
+      resized = true;
+    }
+
+    const canvasElem = document.createElement("canvas");
+    canvasElem.width = canvasProps.width;
+    canvasElem.height = canvasProps.height;
+    const ctx = canvasElem.getContext("2d");
+
+    let diffProp = resized
+      ? Math.abs(canvasProps[biggerProp] - img[biggerProp]) *
+        (canvasProps[smallerProp] / img[smallerProp])
+      : 0;
+
+    if (landscape) {
+      ctx.drawImage(
+        img,
+        diffProp / 2,
+        0,
+        img.width - diffProp,
+        img.height,
+        0,
+        0,
+        canvasProps.width,
+        canvasProps.height
+      );
+    } else {
+      ctx.drawImage(
+        img,
+        0,
+        diffProp / 2,
+        img.width,
+        img.height - diffProp,
+        0,
+        0,
+        canvasProps.width,
+        canvasProps.height
+      );
+    }
+    let newBlob = await new Promise((resolve) => {
+      ctx.canvas.toBlob(
+        (newBlob) => {
+          resolve(newBlob);
+        },
+        mimeType,
+        quality / 100.0
+      );
+    });
+
+    return newBlob;
+  };
+
+  cropSquare = async (originalBlob, mimeType, quality, resolution) => {
+    let img = originalBlob;
+    if (!(originalBlob instanceof Image)) {
+      img = await this.readImg(originalBlob);
+    }
+
+    const canvasElem = document.createElement("canvas");
+    canvasElem.width = resolution;
+    canvasElem.height = resolution;
+    const ctx = canvasElem.getContext("2d");
+
+    let landscape = img.height < img.width;
+    let diffWidthHeight = Math.abs(img.width - img.height);
+    if (landscape) {
+      ctx.drawImage(
+        img,
+        diffWidthHeight / 2,
+        0,
+        img.height,
+        img.height,
+        0,
+        0,
+        resolution,
+        resolution
+      );
+    } else {
+      ctx.drawImage(
+        img,
+        0,
+        diffWidthHeight / 2,
+        img.width,
+        img.width,
+        0,
+        0,
+        resolution,
+        resolution
+      );
+    }
+
+    let newBlob = await new Promise((resolve) => {
+      ctx.canvas.toBlob(
+        (newBlob) => {
+          resolve(newBlob);
+        },
+        mimeType,
+        quality / 100.0
+      );
+    });
+
+    return newBlob;
+  };
+
+  compress = async (
+    originalBlob,
+    mimeType,
+    quality,
+    maxResolution,
+    sizeLowestPrevails = true
+  ) => {
+    let img = originalBlob;
+    if (!(originalBlob instanceof Image)) {
+      img = await this.readImg(originalBlob);
+    }
+
+    let newWidth = img.width;
+    let newHeight = img.height;
+    let resized = false;
+    if (maxResolution != null) {
+      if (
+        (img.width > img.height || img.width == img.height) &&
+        img.width > maxResolution
+      ) {
+        newWidth = maxResolution;
+        let scaleFactor = newWidth / img.width;
+        newHeight = img.height * scaleFactor;
+        resized = true;
+      }
+      if (img.height > img.width && img.height > maxResolution) {
+        newHeight = maxResolution;
+        let scaleFactor = newHeight / img.height;
+        newWidth = img.width * scaleFactor;
+        resized = true;
+      }
+    }
+
+    const canvasElem = document.createElement("canvas");
+    canvasElem.width = newWidth;
+    canvasElem.height = newHeight;
+
+    const ctx = canvasElem.getContext("2d");
+
+    ctx.drawImage(img, 0, 0, newWidth, newHeight);
+
+    let newBlob = await new Promise((resolve) => {
+      ctx.canvas.toBlob(
+        (newBlob) => {
+          if (newBlob.size < originalBlob.size) {
+            resolve(newBlob);
+          } else {
+            if (resized) {
+              if (sizeLowestPrevails) {
+                resolve(originalBlob);
+              } else {
+                resolve(newBlob);
+              }
+            } else {
+              resolve(originalBlob);
+            }
+          }
+        },
+        mimeType,
+        quality / 100.0
+      );
+    });
+
+    return newBlob;
+  };
 }
