@@ -103,7 +103,6 @@ body {
   position: relative;
   width: 90%;
   height: 20px;
-  background: rgba(255, 255, 255, 0.3);
 }
 
 .zoom-slider-track::before {
