@@ -210,6 +210,9 @@ export default class SCameraUIController {
     zoomValueLabel.className = 'zoom-value-label';
     zoomValueLabel.textContent = 'x1.0';
 
+    const containerSliderTrack = document.createElement('div');
+    containerSliderTrack.className = 'zoom-slider-track-container';
+
     const sliderTrack = document.createElement('div');
     sliderTrack.className = 'zoom-slider-track';
 
@@ -221,10 +224,11 @@ export default class SCameraUIController {
     const touchArea = document.createElement('div');
     touchArea.className = 'zoom-touch-area';
 
+    containerSliderTrack.appendChild(sliderTrack);
     sliderTrack.appendChild(visualIndicator);
     sliderTrack.appendChild(touchArea);
     zoomControl.appendChild(zoomValueLabel);
-    zoomControl.appendChild(sliderTrack);
+    zoomControl.appendChild(containerSliderTrack);
 
     // Salva referências
     this.zoomValueLabel = zoomValueLabel;
