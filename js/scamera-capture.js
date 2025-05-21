@@ -48,16 +48,6 @@ class SCameraCaptureController {
       this.currentDeviceId = this.settings.deviceId;
 
       console.log("Capacidades da câmera:", this.capabilities);
-
-      // Aplicar zoom atual se suportado
-      if (this.capabilities?.zoom && this.isMobile) {
-        this.setZoom(this.currentZoom);
-      }
-
-      // Aplicar flash/torch se suportado
-      if (this.capabilities?.torch && this.isMobile) {
-        this.toggleFlash(this.torchEnabled);
-      }
       
       // Inicializa ImageCapture se suportado
       if ('ImageCapture' in window) {
