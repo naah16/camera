@@ -153,14 +153,6 @@ class SCameraCaptureController {
         },
         audio: false
       });
-
-      if (this.capabilities?.zoom && SCamera.currentConfig.zoom > 1) {
-        this.setZoom(SCamera.currentConfig.zoom);
-      }
-
-      if (this.capabilities?.torch) {
-        this.toggleFlash(SCamera.currentConfig.flash);
-      }
     } catch (error) {
       console.error('Erro ao trocar a câmera:', error);
       throw error;
