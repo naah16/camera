@@ -207,36 +207,24 @@ class SCameraCaptureController {
     }
   }
 
-  setZoom(configZoom) {
-    const zoomSlider = document.querySelector('#zoom-slider');
-    const zoomLevel = document.querySelector('.zoom-level');
+  setZoom(zoomValue) {
     if (!this.videoTrack || !this.capabilities?.zoom) {
       console.log('Zoom not supported');
-      return;
+      return this.currentZoom;
     }
-    
-    if (this.capabilities.zoom) {
-      zoomSlider.min = this.capabilities.zoom.min;
-      zoomSlider.max = this.capabilities.zoom.max;
-      zoomSlider.step = this.capabilities.zoom.step;
-      zoomSlider.value = this.currentZoom;
 
-      zoomSlider.oninput = () => {
-        const zoomValue = parseFloat(zoomSlider.value);
-        this.currentZoom = zoomValue;
-        this.videoTrack.applyConstraints({
-          advanced: [{ zoom: zoomValue }]
-        }).then(() => {
-          SCamera.currentConfig.zoom = zoomValue;
-          const normalizedZoom = zoomValue / this.capabilities.zoom.min;
-          zoomLevel.textContent = `x${normalizedZoom.toFixed(1)}`;
-        }).catch(error => {
-          console.error('Error setting zoom:', error);
-        });
-      };
-    } else {
-      console.log('Zoom not supported on this device');
-    }
+    const clampedZoom = Math.min(Math.max(zoomValue, this.capabilities.zoom.min), this.capabilities.zoom.max);
+    this.currentZoom = clampedZoom;
+
+    return this.videoTrack.applyConstraints({
+      advanced: [{ zoom: clampedZoom }]
+    }).then(() => {
+      SCamera.currentConfig.zoom = clampedZoom;
+      return clampedZoom;
+    }).catch((error) => {
+      console.error('Error setting zoom:', error);
+      return this.currentZoom;
+    });
   }
 
   toggleFlash(state) {

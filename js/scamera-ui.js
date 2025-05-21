@@ -202,38 +202,60 @@ class SCameraUIController {
 
   createZoomControl() {
     const zoomControl = document.createElement('div');
-    const zoomSlider = document.createElement('input');
-    const zoomLevel = document.createElement('div');
-    
-    zoomControl.className = 'zoom-control';
-    zoomSlider.style.display = 'none';
-    zoomSlider.id = 'zoom-slider';
-    zoomSlider.type = 'range';
-    zoomSlider.min = '1';
-    zoomSlider.max = '3';
-    zoomSlider.step = '0.1';
-    zoomSlider.value = '1';
-    
-    zoomLevel.className = 'zoom-level';
-    zoomLevel.textContent = 'x1.0';
+    zoomControl.className = 'zoom-slider-container';
 
-    //adicionar toggle para abrir o zoomSlider
-    zoomLevel.addEventListener('click', () => {
-      if (zoomSlider.style.display === 'none') {
-        zoomSlider.style.display = 'block';
-      } else {
-        zoomSlider.style.display = 'none';
-      }
-    });
+    const zoomValueLabel = document.createElement('div');
+    zoomValueLabel.className = 'zoom-value-label';
+    zoomValueLabel.textContent = 'x1.0';
 
-    zoomControl.appendChild(zoomSlider);
-    zoomControl.appendChild(zoomLevel);
+    const sliderTrack = document.createElement('div');
+    sliderTrack.className = 'zoom-slider-track';
 
+    const indicator = document.createElement('div');
+    indicator.className = 'zoom-indicator';
+
+    sliderTrack.appendChild(indicator);
+    zoomControl.appendChild(zoomValueLabel);
+    zoomControl.appendChild(sliderTrack);
+
+    // Armazenar para uso posterior
+    this.zoomValueLabel = zoomValueLabel;
+    this.zoomIndicator = indicator;
+    this.zoomTrack = sliderTrack;
+
+    // Oculta se for câmera frontal
     if (SCamera.currentConfig.facingMode === 'user') {
       zoomControl.style.display = 'none';
-    } else {
-      zoomControl.style.display = 'flex';
     }
+
+    // Adiciona evento de toque ou mouse para atualizar o zoom
+    const handleZoomChange = (event) => {
+      const rect = sliderTrack.getBoundingClientRect();
+      const x = event.touches ? event.touches[0].clientX : event.clientX;
+      const percent = (x - rect.left) / rect.width;
+      const clamped = Math.min(Math.max(percent, 0), 1);
+
+      const { min, max } = SCamera.captureController.capabilities.zoom;
+      const zoomValue = min + clamped * (max - min);
+
+      // Atualiza UI
+      indicator.style.left = `${clamped * 100}%`;
+      zoomValueLabel.textContent = `x${(zoomValue / min).toFixed(1)}`;
+
+      // Aplica o zoom
+      SCamera.captureController.setZoom(zoomValue);
+    };
+
+    sliderTrack.addEventListener('mousedown', (e) => {
+      handleZoomChange(e);
+      document.addEventListener('mousemove', handleZoomChange);
+      document.addEventListener('mouseup', () => {
+        document.removeEventListener('mousemove', handleZoomChange);
+      }, { once: true });
+    });
+
+    sliderTrack.addEventListener('touchstart', handleZoomChange);
+    sliderTrack.addEventListener('touchmove', handleZoomChange);
 
     return zoomControl;
   }
