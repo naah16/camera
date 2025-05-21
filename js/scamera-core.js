@@ -17,10 +17,14 @@ let SCamera = {
     SCamera.uiController = new SCameraUIController();
     SCamera.captureController = new SCameraCaptureController();
     
-    SCamera.uiController.init();
-    await SCamera.captureController.init();
-    
-    await SCamera.loadDevices();
+    try {
+      SCamera.uiController.init();
+      await SCamera.captureController.init();
+      await SCamera.loadDevices();
+    } catch (error) {
+      console.error('Initialization error:', error);
+      SCamera.uiController.showCameraError();
+    }
   },
   
   loadDevices: async () => {

@@ -26,8 +26,7 @@ class SCameraCaptureController {
         facingMode: SCamera.currentConfig.facingMode,
         width: { ideal: SCamera.currentConfig.resolution.width },
         height: { ideal: SCamera.currentConfig.resolution.height },
-        deviceId: SCamera.currentConfig.deviceId ? { exact: SCamera.currentConfig.deviceId } : undefined,
-        zoom: true
+        deviceId: SCamera.currentConfig.deviceId ? { exact: SCamera.currentConfig.deviceId } : undefined
       },
       audio: false,
     };
@@ -39,8 +38,12 @@ class SCameraCaptureController {
       this.currentStream = stream;
       this.videoTrack = stream.getVideoTracks()[0];
 
+      if (!this.videoTrack) {
+        throw new Error('No video track available');
+      }
+
       // Configurar capacidades da câmera
-      this.capabilities = this.videoTrack.getCapabilities ? this.videoTrack.getCapabilities() : null;
+      this.capabilities = this.videoTrack.getCapabilities?.() || null;
       this.settings = this.videoTrack.getSettings();
       this.currentDeviceId = this.settings.deviceId;
 
@@ -62,15 +65,16 @@ class SCameraCaptureController {
       }
 
       const videoElement = document.querySelector('.camera-preview');
-      if (this.capabilities?.facingMode == 'user') {
-        videoElement.style.transform = 'scaleX(-1)';
-      } else {
-        videoElement.style.transform = 'scaleX(1)';
+      if (videoElement) {
+        videoElement.srcObject = stream;
+        videoElement.play();
+        
+        if (this.settings.facingMode === 'user') {
+          videoElement.style.transform = 'scaleX(-1)';
+        } else {
+          videoElement.style.transform = 'scaleX(1)';
+        }
       }
-      
-      this.capabilities = this.videoTrack.getCapabilities ? this.videoTrack.getCapabilities() : null;
-      this.settings = this.videoTrack.getSettings();
-      this.currentDeviceId = this.settings.deviceId;
       
       // Atualiza configurações no SCamera
       SCamera.currentConfig.deviceId = this.currentDeviceId;
@@ -81,16 +85,9 @@ class SCameraCaptureController {
       
       return stream;
     } catch (error) {
-      alert('Erro ao acessar a câmera. Verifique as permissões ou se existe uma câmera disponível.');
-      console.error('Error accessing camera:', error.message);
+      console.error('Error accessing camera:', error);
+      SCamera.uiController?.showCameraError();
       throw error;
-    } finally {
-      // Atualiza a interface do usuário
-      const videoElement = document.querySelector('.camera-preview');
-      if (videoElement) {
-        videoElement.srcObject = this.currentStream;
-        videoElement.play();
-      }
     }
   }
 

@@ -43,7 +43,6 @@ class SCameraUIController {
     }
     
     document.body.appendChild(cameraContainer);
-    // SCamera.startCamera();
   }
 
   async createMobileControls(container) {
@@ -348,20 +347,29 @@ class SCameraUIController {
     document.body.removeChild(link);
   }
 
-  showCameraError() {
+  showCameraError(message = 'Não foi possível acessar a câmera') {
+    const viewfinder = document.querySelector('.viewfinder-container');
+    if (!viewfinder) return;
+
+    const existingError = viewfinder.querySelector('.camera-error');
+    if (existingError) existingError.remove();
+
     const errorContainer = document.createElement('div');
     errorContainer.className = 'camera-error';
     errorContainer.innerHTML = `
-      <p>Não foi possível acessar a câmera</p>
+      <p>${message}</p>
       <button id="retry-camera-btn">Tente novamente</button>
     `;
     
-    document.querySelector('.viewfinder-container').appendChild(errorContainer);
+    viewfinder.appendChild(errorContainer);
     
-    const retryBtn = document.getElementById('retry-camera-btn');
-    retryBtn.addEventListener('click', () => {
+    document.getElementById('retry-camera-btn').addEventListener('click', async () => {
       errorContainer.remove();
-      // SCamera.startCamera();
+      try {
+        await SCamera.captureController.getCameraStream();
+      } catch (error) {
+        this.showCameraError(error.message);
+      }
     });
   }
 
