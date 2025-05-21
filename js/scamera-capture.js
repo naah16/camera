@@ -8,6 +8,7 @@ export default class SCameraCaptureController {
     this.settings = null;
     this.currentZoom = 1;
     this.torchEnabled = false;
+    this.blob = null;
     this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   }
 
@@ -200,6 +201,8 @@ export default class SCameraCaptureController {
         });
       }
 
+      this.blob = photoBlob;
+
       const compressed = this.compress(
         photoBlob,
         "image/jpeg",
@@ -207,11 +210,22 @@ export default class SCameraCaptureController {
         1920
       );
 
+      compressed.name = `photo-${Date.now()}.jpg`;
+
       return compressed;
     } catch (error) {
       console.error('Error capturing photo:', error);
       throw error;
     }
+  }
+
+  sendBlob() {
+    document.dispatchEvent(new CustomEvent('photoCaptured', {
+      detail: {  blob: this.blob },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    }));
   }
 
   setZoom(zoomValue) {

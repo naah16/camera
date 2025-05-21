@@ -99,17 +99,17 @@ let SCamera = {
     }
   },
 
+  sendBlob: () => {
+    SCamera.captureController.sendBlob();
+  },
+
   closeCamera: () => {
     const existingContainer = document.querySelector('.camera-container');
     if (existingContainer) {
-      this.stopCurrentStream();
+      SCamera.captureController.stopCurrentStream();
       existingContainer.remove();
     }
   },
-
-  stopCurrentStream: () => {
-    SCamera.captureController.stopCurrentStream();
-  }
 };
 
 window.SCamera = SCamera;

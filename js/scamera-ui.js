@@ -2,7 +2,6 @@ export default class SCameraUIController {
   constructor() {
     this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     this.photoPreview = null;
-    this.blob = null;
   }
 
   init() {
@@ -63,12 +62,15 @@ export default class SCameraUIController {
     
     const zoomControl = this.createZoomControl();
     zoomControl.className += ' mobile-zoom';
+
+    const leaveCameraBtn = this.createLeaveCameraBtn();
     
     actionsContainer.appendChild(flashBtn);
     actionsContainer.appendChild(shutterBtn);
     actionsContainer.appendChild(switchCamBtn);
     controlsContainer.appendChild(zoomControl);
     controlsContainer.appendChild(actionsContainer);
+    container.appendChild(leaveCameraBtn);
     container.appendChild(controlsContainer);
   }
 
@@ -84,10 +86,28 @@ export default class SCameraUIController {
     topBar.appendChild(switchCamBtn);
     
     const shutterBtn = this.createShutterBtn();
+    const leaveCameraBtn = this.createLeaveCameraBtn();
     
     controlsContainer.appendChild(topBar);
     controlsContainer.appendChild(shutterBtn);
+    container.appendChild(leaveCameraBtn);
     container.appendChild(controlsContainer);
+  }
+
+  createLeaveCameraBtn() {
+    const leaveCameraBtn = document.createElement('button');
+    leaveCameraBtn.className = 'leave-camera-btn';
+    leaveCameraBtn.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icons-actions-container"><title>arrow-left-bottom</title>
+        <path d="M20 4V10.5C20 14.09 17.09 17 13.5 17H7.83L10.92 20.09L9.5 21.5L4 16L9.5 10.5L10.91 11.91L7.83 15H13.5C16 15 18 13 18 10.5V4H20Z" />
+      </svg>
+    `;
+    
+    leaveCameraBtn.addEventListener('click', () => {
+      SCamera.closeCamera();
+    });
+    
+    return leaveCameraBtn;
   }
 
   createShutterBtn() {
@@ -99,7 +119,6 @@ export default class SCameraUIController {
       try {
         shutterBtn.disabled = true;
         const photoBlob = await SCamera.capturePhoto();
-        this.blob = photoBlob;
         this.showPhotoPreview(photoBlob);
       } catch (error) {
         console.error('Capture error:', error);
@@ -323,7 +342,7 @@ export default class SCameraUIController {
     const downloadBtn = document.createElement('button');
     downloadBtn.className = 'photo-action-btn download-btn';
     downloadBtn.innerHTML = 'Usar foto';
-    downloadBtn.addEventListener('click', () => this.sendBlob());
+    downloadBtn.addEventListener('click', () => Scamera.sendBlob());
     
     actions.appendChild(closeBtn);
     actions.appendChild(downloadBtn);
@@ -351,7 +370,7 @@ export default class SCameraUIController {
         <path d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z" />
       </svg>
     `;
-    downloadBtn.addEventListener('click', () => this.sendBlob());
+    downloadBtn.addEventListener('click', () => Scamera.sendBlob());
     
     actions.appendChild(closeBtn);
     actions.appendChild(downloadBtn);
@@ -379,15 +398,6 @@ export default class SCameraUIController {
     }
   }
 
-  sendBlob() {
-    this.dispatchEvent(new CustomEvent('photoCaptured', {
-      detail: { blob: this.blob },
-      bubbles: true,
-      cancelable: true,
-      composed: true
-    }));
-  }
-
   showCameraError(message = 'Não foi possível acessar a câmera') {
     const viewfinder = document.querySelector('.viewfinder-container');
     if (!viewfinder) return;
@@ -400,6 +410,7 @@ export default class SCameraUIController {
     errorContainer.innerHTML = `
       <p>${message}</p>
       <button id="retry-camera-btn">Tente novamente</button>
+      <button id="exit-camera-btn">Sair</button>
     `;
     
     viewfinder.appendChild(errorContainer);
@@ -411,6 +422,11 @@ export default class SCameraUIController {
       } catch (error) {
         this.showCameraError(error.message);
       }
+    });
+
+    document.getElementById('exit-camera-btn').addEventListener('click', () => {
+      errorContainer.remove();
+      SCamera.closeCamera();
     });
   }
 
