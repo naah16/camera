@@ -131,7 +131,7 @@ export default class SCameraUIController {
   }
 
   async createSwitchCamControl() {
-    if(this.isMobile) {
+    if (this.isMobile) {
       const switchCamBtn = document.createElement('button');
       
       switchCamBtn.id = 'switch-cam-btn';
@@ -145,6 +145,11 @@ export default class SCameraUIController {
       switchCamBtn.addEventListener('click', async () => {
         try {
           switchCamBtn.disabled = true;
+          switchCamBtn.classList.add('animate');
+          setTimeout(() => {
+            switchCamBtn.classList.remove('animate');
+          }, 500);
+
           await SCamera.switchCamera();
         } catch (error) {
           console.error('Error switching camera:', error);
