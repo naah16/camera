@@ -163,12 +163,6 @@ export default class SCameraCaptureController {
   async capturePhoto() {
     try {
       let photoBlob;
-      const isPortrait = screen.availHeight > screen.availWidth;
-      Scamera.currentConfig.deviceId = this.currentDeviceId;
-      Scamera.currentConfig.resolution = {
-        width: isPortrait ? this.settings.height : this.settings.width,
-        height: isPortrait ? this.settings.width : this.settings.height
-      };
       
       // Tentar usar ImageCapture para melhor qualidade
       if (this.imageCapture) {
