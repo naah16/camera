@@ -386,7 +386,7 @@ export default class SCameraUIController {
     const downloadBtn = document.createElement('button');
     downloadBtn.className = 'photo-action-btn download-btn';
     downloadBtn.innerHTML = 'Usar foto';
-    downloadBtn.addEventListener('click', () => Scamera.sendBlob());
+    downloadBtn.addEventListener('click', () => SCamera.sendBlob());
     
     actions.appendChild(closeBtn);
     actions.appendChild(downloadBtn);
@@ -414,7 +414,7 @@ export default class SCameraUIController {
         <path d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z" />
       </svg>
     `;
-    downloadBtn.addEventListener('click', () => Scamera.sendBlob());
+    downloadBtn.addEventListener('click', () => SCamera.sendBlob());
     
     actions.appendChild(closeBtn);
     actions.appendChild(downloadBtn);

@@ -229,9 +229,7 @@ export default class SCameraCaptureController {
         });
       }
 
-      this.blob = photoBlob;
-
-      const compressed = this.compress(
+      const compressed = await this.compress(
         photoBlob,
         "image/jpeg",
         90,
@@ -239,6 +237,7 @@ export default class SCameraCaptureController {
       );
 
       compressed.name = `photo-${Date.now()}.jpg`;
+      this.blob = compressed;
 
       return compressed;
     } catch (error) {
