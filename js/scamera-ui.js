@@ -283,7 +283,7 @@ export default class SCameraUIController {
     const createZoomLabel = (zoomValue) => {
       const label = document.createElement('div');
       label.className = 'zoom-value-label';
-      label.textContent = `x${zoomValue.toFixed(1)}`;
+      label.textContent = `x${zoomValue % 1 === 0 ? zoomValue : zoomValue.toFixed(1).replace('.0', '')}`;
 
       label.addEventListener('click', (e) => {
         e.stopPropagation(); // Impede que o clique feche o slider
@@ -355,7 +355,7 @@ export default class SCameraUIController {
       if (sliderLabel) sliderLabel.remove();
 
       sliderLabel = createZoomLabel(newZoom);
-      sliderLabel.textContent = `x${newZoom.toFixed(1)}`;
+      sliderLabel.textContent = `x${newZoom % 1 === 0 ? newZoom : newZoom.toFixed(1).replace('.0', '')}`;      
       zoomOptionsContainer.appendChild(sliderLabel);
 
       document.querySelectorAll('.zoom-value-label').forEach(el => {
