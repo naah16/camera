@@ -71,13 +71,11 @@ body {
 
 .zoom-slider-container {
   position: absolute;
-  bottom: 100px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  z-index: 10;
 }
 
 .zoom-options-container {
@@ -88,7 +86,7 @@ body {
   border-radius: 90px;
   background: rgba(0, 0, 0, 0.2);
   padding: 5px;
-  margin-bottom: 130px;
+  margin-bottom: 140px;
 }
 
 .zoom-value-label {
@@ -213,6 +211,7 @@ body {
   align-items: center;
   justify-content: space-between;
   width: 100%;
+  z-index: 1000;
 }
 
 .mobile-switch, .mobile-flash, .leave-camera-btn {

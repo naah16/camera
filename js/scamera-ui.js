@@ -290,7 +290,7 @@ export default class SCameraUIController {
 
         if (lastClickedLabel === label && isExpanded) {
           containerSliderTrack.style.display = 'flex';
-          zoomOptionsContainer.style.marginBottom = '0px';
+          zoomOptionsContainer.style.marginBottom = '5px';
           return;
         }
 
@@ -310,7 +310,7 @@ export default class SCameraUIController {
         visualIndicator.style.left = `${percent * 100}%`;
 
         containerSliderTrack.style.display = 'none';
-        zoomOptionsContainer.style.marginBottom = '130px';
+        zoomOptionsContainer.style.marginBottom = '140px';
 
         document.querySelectorAll('.zoom-value-label').forEach(el => {
           el.classList.remove('active');
@@ -370,7 +370,7 @@ export default class SCameraUIController {
       if (!zoomControl.contains(e.target)) {
         if (containerSliderTrack.style.display === 'flex') {
           containerSliderTrack.style.display = 'none';
-          zoomOptionsContainer.style.marginBottom = '130px';
+          zoomOptionsContainer.style.marginBottom = '140px';
         }
 
         // Mantém apenas a última label usada
