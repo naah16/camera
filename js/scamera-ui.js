@@ -236,23 +236,47 @@ export default class SCameraUIController {
     const zoomControl = document.createElement('div');
     zoomControl.className = 'zoom-slider-container';
 
-    const fixedZoomValues = [1, 2, 3];
-    const { min, max } = SCamera.captureController.capabilities.zoom;
-    if (!fixedZoomValues.includes(max)) fixedZoomValues.push(max);
+    const capabilities = SCamera.captureController?.capabilities;
+    const zoomCap = capabilities?.zoom;
 
-    const zoomButtonsWrapper = document.createElement('div');
-    zoomButtonsWrapper.className = 'zoom-fixed-buttons';
+    if (!zoomCap) {
+      console.warn('Zoom não suportado ou não inicializado.');
+      return zoomControl;
+    }
 
-    fixedZoomValues.forEach(value => {
-      const btn = document.createElement('div');
-      btn.className = 'zoom-value-label';
-      btn.dataset.zoom = value;
-      btn.textContent = `x${value}`;
-      zoomButtonsWrapper.appendChild(btn);
+    const { min, max } = zoomCap;
+    const STEP = 0.5;
+
+    const fixedValuesContainer = document.createElement('div');
+    fixedValuesContainer.className = 'zoom-fixed-values';
+
+    const zoomSteps = [1, 2, 3, max];
+
+    // Cria elementos x1, x2, x3, xMax
+    zoomSteps.forEach(step => {
+      const zoomBtn = document.createElement('div');
+      zoomBtn.className = 'zoom-value-label';
+      zoomBtn.textContent = `x${step}`;
+
+      zoomBtn.addEventListener('click', () => {
+        SCamera.captureController.setZoom(step);
+        visualIndicator.style.left = `${((step - min) / (max - min)) * 100}%`;
+        zoomValueLabel.textContent = `x${step.toFixed(1)}`;
+        sliderTrackContainer.style.display = 'block';
+      });
+
+      fixedValuesContainer.appendChild(zoomBtn);
     });
 
-    const containerSliderTrack = document.createElement('div');
-    containerSliderTrack.className = 'zoom-slider-track-container hidden'; // começa escondido
+    // Elemento principal que mostra o valor atual
+    const zoomValueLabel = document.createElement('div');
+    zoomValueLabel.className = 'zoom-value-label';
+    zoomValueLabel.textContent = 'x1.0';
+
+    // Container para a barra de controle de zoom (inicialmente oculta)
+    const sliderTrackContainer = document.createElement('div');
+    sliderTrackContainer.className = 'zoom-slider-track-container';
+    sliderTrackContainer.style.display = 'none';
 
     const sliderTrack = document.createElement('div');
     sliderTrack.className = 'zoom-slider-track';
@@ -263,37 +287,36 @@ export default class SCameraUIController {
     const touchArea = document.createElement('div');
     touchArea.className = 'zoom-touch-area';
 
-    containerSliderTrack.appendChild(sliderTrack);
     sliderTrack.appendChild(visualIndicator);
     sliderTrack.appendChild(touchArea);
+    sliderTrackContainer.appendChild(sliderTrack);
 
-    zoomControl.appendChild(zoomButtonsWrapper);
-    zoomControl.appendChild(containerSliderTrack);
+    zoomControl.appendChild(fixedValuesContainer);
+    zoomControl.appendChild(zoomValueLabel);
+    zoomControl.appendChild(sliderTrackContainer);
 
-    // Salva referências
+    this.zoomValueLabel = zoomValueLabel;
     this.zoomIndicator = visualIndicator;
     this.zoomTrack = sliderTrack;
-    this.zoomSliderContainer = containerSliderTrack;
 
-    const STEP = 0.5;
-
-    const applyZoom = (zoomValue) => {
-      const adjusted = Math.round(zoomValue / STEP) * STEP;
-      const percent = (adjusted - min) / (max - min);
-      visualIndicator.style.left = `${percent * 100}%`;
-      SCamera.captureController.setZoom(adjusted);
-      document.querySelectorAll('.zoom-value-label').forEach(el => {
-        el.classList.toggle('active', Number(el.dataset.zoom) === adjusted);
-      });
-    };
+    if (SCamera.currentConfig?.facingMode === 'user') {
+      zoomControl.style.display = 'none';
+    }
 
     const handleZoomChange = (event) => {
       const rect = sliderTrack.getBoundingClientRect();
       const x = event.touches ? event.touches[0].clientX : event.clientX;
       const percent = (x - rect.left) / rect.width;
       const clamped = Math.min(Math.max(percent, 0), 1);
-      const rawZoom = min + clamped * (max - min);
-      applyZoom(rawZoom);
+      let rawZoom = min + clamped * (max - min);
+      const zoomValue = Math.round(rawZoom / STEP) * STEP;
+
+      // Atualiza UI
+      const percentAdjusted = (zoomValue - min) / (max - min);
+      visualIndicator.style.left = `${percentAdjusted * 100}%`;
+      zoomValueLabel.textContent = `x${zoomValue.toFixed(1)}`;
+
+      SCamera.captureController.setZoom(zoomValue);
     };
 
     touchArea.addEventListener('mousedown', (e) => {
@@ -307,26 +330,9 @@ export default class SCameraUIController {
     touchArea.addEventListener('touchstart', handleZoomChange);
     touchArea.addEventListener('touchmove', handleZoomChange);
 
-    // Mostra slider se clicar no valor atual
-    zoomButtonsWrapper.addEventListener('click', (e) => {
-      const btn = e.target.closest('.zoom-value-label');
-      if (!btn) return;
-      const value = Number(btn.dataset.zoom);
-      const currentZoom = SCamera.captureController.currentZoom;
-
-      if (Math.abs(currentZoom - value) < 0.01) {
-        // Se já está nesse valor, mostra slider
-        containerSliderTrack.classList.remove('hidden');
-      } else {
-        // Aplica o novo zoom
-        applyZoom(value);
-      }
-    });
-
-    // Oculta ao clicar fora
-    document.addEventListener('click', (e) => {
-      if (!zoomControl.contains(e.target)) {
-        containerSliderTrack.classList.add('hidden');
+    document.addEventListener('click', (event) => {
+      if (!zoomControl.contains(event.target)) {
+        sliderTrackContainer.style.display = 'none';
       }
     });
 
