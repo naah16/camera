@@ -87,9 +87,11 @@ export default class SCameraUIController {
     
     const shutterBtn = this.createShutterBtn();
     const leaveCameraBtn = this.createLeaveCameraBtn();
+    const zoomControl = await this.createZoomControl();
     
     controlsContainer.appendChild(topBar);
     controlsContainer.appendChild(shutterBtn);
+    controlsContainer.appendChild(zoomControl);
     container.appendChild(leaveCameraBtn);
     container.appendChild(controlsContainer);
   }
@@ -263,7 +265,6 @@ export default class SCameraUIController {
     this.zoomTrack = sliderTrack;
 
     await SCamera.captureController.waitForCapabilities?.();
-
     const zoomCap = SCamera.captureController.capabilities.zoom;
 
     if (!zoomCap) {
@@ -273,23 +274,43 @@ export default class SCameraUIController {
     }
 
     const { min, max } = zoomCap;
-    const STEP = 0.5;
-
     const zoomSteps = [1, 2, 3, max];
+    let currentZoom = 1;
+    let lastClickedLabel = null;
+    let sliderLabel = null;
+    let isExpanded = false;
 
-    zoomSteps.forEach((zoomValue) => {
+    const createZoomLabel = (zoomValue) => {
       const label = document.createElement('div');
       label.className = 'zoom-value-label';
       label.textContent = `x${zoomValue.toFixed(1)}`;
 
-      label.addEventListener('click', () => {
-        SCamera.captureController.setZoom(zoomValue);
+      label.addEventListener('click', (e) => {
+        e.stopPropagation(); // Impede que o clique feche o slider
 
-        // Atualiza indicador
+        if (lastClickedLabel === label && isExpanded) {
+          containerSliderTrack.style.display = 'flex';
+          zoomOptionsContainer.style.marginBottom = '0px';
+          return;
+        }
+
+        if (!isExpanded) {
+          zoomSteps.slice(1).forEach(value => {
+            const newLabel = createZoomLabel(value);
+            zoomOptionsContainer.appendChild(newLabel);
+          });
+          isExpanded = true;
+        }
+
+        SCamera.captureController.setZoom(zoomValue);
+        currentZoom = zoomValue;
+        lastClickedLabel = label;
+
         const percent = (zoomValue - min) / (max - min);
         visualIndicator.style.left = `${percent * 100}%`;
 
-        containerSliderTrack.style.display = 'flex';
+        containerSliderTrack.style.display = 'none';
+        zoomOptionsContainer.style.marginBottom = '130px';
 
         document.querySelectorAll('.zoom-value-label').forEach(el => {
           el.classList.remove('active');
@@ -297,44 +318,69 @@ export default class SCameraUIController {
         label.classList.add('active');
       });
 
-      zoomOptionsContainer.appendChild(label);
+      return label;
+    };
+
+    const x1Label = createZoomLabel(1, true);
+    x1Label.classList.add('active');
+    zoomOptionsContainer.appendChild(x1Label);
+
+    // Evento do touchArea (slider interativo)
+    let isDragging = false;
+
+    touchArea.addEventListener('mousedown', (e) => {
+      e.stopPropagation(); // Impede que o clique fora feche o slider
+      isDragging = true;
+      updateZoomFromPosition(e.clientX);
     });
 
-    // Atualiza via slider
-    const handleZoomChange = (event) => {
+    window.addEventListener('mousemove', (e) => {
+      if (isDragging) updateZoomFromPosition(e.clientX);
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (isDragging) isDragging = false;
+    });
+
+    const updateZoomFromPosition = (clientX) => {
       const rect = sliderTrack.getBoundingClientRect();
-      const x = event.touches ? event.touches[0].clientX : event.clientX;
-      const percent = (x - rect.left) / rect.width;
-      const clamped = Math.min(Math.max(percent, 0), 1);
-      const rawZoom = min + clamped * (max - min);
-      const zoomValue = Math.round(rawZoom / STEP) * STEP;
+      const percent = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+      const newZoom = min + (max - min) * percent;
 
-      SCamera.captureController.setZoom(zoomValue);
+      SCamera.captureController.setZoom(newZoom);
+      currentZoom = newZoom;
 
-      const percentAdjusted = (zoomValue - min) / (max - min);
-      visualIndicator.style.left = `${percentAdjusted * 100}%`;
+      visualIndicator.style.left = `${percent * 100}%`;
 
-      // Remove destaque de zoom fixo
+      if (sliderLabel) sliderLabel.remove();
+
+      sliderLabel = createZoomLabel(newZoom);
+      sliderLabel.textContent = `x${newZoom.toFixed(1)}`;
+      zoomOptionsContainer.appendChild(sliderLabel);
+
       document.querySelectorAll('.zoom-value-label').forEach(el => {
         el.classList.remove('active');
       });
+      sliderLabel.classList.add('active');
+      lastClickedLabel = sliderLabel;
     };
 
-    touchArea.addEventListener('mousedown', (e) => {
-      handleZoomChange(e);
-      document.addEventListener('mousemove', handleZoomChange);
-      document.addEventListener('mouseup', () => {
-        document.removeEventListener('mousemove', handleZoomChange);
-      }, { once: true });
-    });
-
-    touchArea.addEventListener('touchstart', handleZoomChange);
-    touchArea.addEventListener('touchmove', handleZoomChange);
-
-    // Oculta o slider ao clicar fora
+    // Fecha o slider e limpa labels extras ao clicar fora
     document.addEventListener('click', (e) => {
       if (!zoomControl.contains(e.target)) {
-        containerSliderTrack.style.display = 'none';
+        if (containerSliderTrack.style.display === 'flex') {
+          containerSliderTrack.style.display = 'none';
+          zoomOptionsContainer.style.marginBottom = '130px';
+        }
+
+        // Mantém apenas a última label usada
+        const labels = zoomOptionsContainer.querySelectorAll('.zoom-value-label');
+        labels.forEach(label => {
+          if (label !== lastClickedLabel) {
+            label.remove();
+          }
+        });
+        isExpanded = false;
       }
     });
 

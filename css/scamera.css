@@ -88,6 +88,7 @@ body {
   border-radius: 90px;
   background: rgba(0, 0, 0, 0.2);
   padding: 5px;
+  margin-bottom: 130px;
 }
 
 .zoom-value-label {
@@ -99,6 +100,7 @@ body {
 }
 
 .zoom-value-label.active {
+  color: #FFD700;
   background: rgba(0, 0, 0, 0.4);
 }
 
@@ -109,6 +111,8 @@ body {
   background: rgba(0, 0, 0, 0.3);
   height: 40px;
   align-items: center;
+  padding-bottom: 130px;
+  margin-top: 5px;
 }
 
 .zoom-slider-track-container.hidden {
@@ -191,12 +195,12 @@ body {
 /* Mobile Controls */
 .mobile-controls {
   position: absolute;
-  bottom: 20px;
+  bottom: 0;
   left: 0;
   right: 0;
   display: flex;
   align-items: center;
-  padding: 0 20px;
+  padding: 20px;
   justify-content: center;
   z-index: 1000;
   flex-direction: column;
