@@ -163,6 +163,15 @@ export default class SCameraCaptureController {
   async capturePhoto() {
     try {
       let photoBlob;
+      const isPortrait = screen.availHeight > screen.availWidth;
+
+      SCamera.currentConfig.deviceId = this.currentDeviceId;
+      SCamera.currentConfig.resolution = {
+        width: isPortrait ? this.settings.height : this.settings.width,
+        height: isPortrait ? this.settings.width : this.settings.height
+      };
+
+      console.log("Resolução da câmera:", SCamera.currentConfig.resolution);
       
       // Tentar usar ImageCapture para melhor qualidade
       if (this.imageCapture) {
@@ -171,17 +180,26 @@ export default class SCameraCaptureController {
           
           // Converter ImageBitmap para Blob
           const canvas = document.createElement('canvas');
-          canvas.width = photoBitmap.width;
-          canvas.height = photoBitmap.height;
+          
+          // Usa as dimensões configuradas
+          canvas.width = SCamera.currentConfig.resolution.width;
+          canvas.height = SCamera.currentConfig.resolution.height;
+          
           const ctx = canvas.getContext('2d');
-          ctx.drawImage(photoBitmap, 0, 0);
+          
+          // Aplica transformação para câmera frontal se necessário
+          if (this.settings.facingMode === 'user') {
+            ctx.scale(-1, 1);
+            ctx.drawImage(photoBitmap, -photoBitmap.width, 0, photoBitmap.width, photoBitmap.height);
+          } else {
+            ctx.drawImage(photoBitmap, 0, 0, canvas.width, canvas.height);
+          }
           
           photoBlob = await new Promise((resolve) => {
             canvas.toBlob(resolve, 'image/jpeg', 1);
           });
         } catch (error) {
           console.warn('ImageCapture failed, falling back to canvas:', error);
-          // Continuar para o fallback do canvas
         }
       }
       
@@ -191,10 +209,20 @@ export default class SCameraCaptureController {
         if (!videoElement) throw new Error('Video element not found');
         
         const canvas = document.createElement('canvas');
-        canvas.width = videoElement.videoWidth;
-        canvas.height = videoElement.videoHeight;
+        
+        // Usa as dimensões configuradas
+        canvas.width = SCamera.currentConfig.resolution.width;
+        canvas.height = SCamera.currentConfig.resolution.height;
+        
         const ctx = canvas.getContext('2d');
-        ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+        
+        // Aplica transformação para câmera frontal se necessário
+        if (this.settings.facingMode === 'user') {
+          ctx.scale(-1, 1); // Espelhamento horizontal
+          ctx.drawImage(videoElement, -videoElement.videoWidth, 0, videoElement.videoWidth, videoElement.videoHeight);
+        } else {
+          ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+        }
         
         photoBlob = await new Promise((resolve) => {
           canvas.toBlob(resolve, 'image/jpeg', 1);
