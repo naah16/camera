@@ -81,13 +81,17 @@ body {
 }
 
 .zoom-value-label {
-  background: rgba(0, 0, 0, 0.6);
-  color: #FFD700;
+  cursor: pointer;
+  padding: 4px 8px;
+  margin: 0 4px;
+  border-radius: 8px;
+  background: #f0f0f0;
+  user-select: none;
+}
+
+.zoom-value-label.active {
+  background: #ddd;
   font-weight: bold;
-  font-size: 16px;
-  padding: 8px;
-  border-radius: 90px;
-  margin-bottom: 15px;
 }
 
 .zoom-slider-track-container {
@@ -97,6 +101,10 @@ body {
   background: rgba(0, 0, 0, 0.3);
   height: 40px;
   align-items: center;
+}
+
+.zoom-slider-track-container.hidden {
+  display: none;
 }
 
 .zoom-slider-track {
