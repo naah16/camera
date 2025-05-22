@@ -163,27 +163,27 @@ export default class SCameraCaptureController {
   async capturePhoto() {
     try {
       let photoBlob;
-      let canvas = document.createElement('canvas');
+      const isPortrait = screen.availHeight > screen.availWidth;
+      Scamera.currentConfig.deviceId = this.currentDeviceId;
+      Scamera.currentConfig.resolution = {
+        width: isPortrait ? this.settings.height : this.settings.width,
+        height: isPortrait ? this.settings.width : this.settings.height
+      };
       
+      // Tentar usar ImageCapture para melhor qualidade
       if (this.imageCapture) {
         try {
           const photoBitmap = await this.imageCapture.grabFrame();
           
-          // Configuração do canvas para câmera frontal (retrato)
-          if (this.settings.facingMode === 'user') {
-            canvas.width = photoBitmap.height;  // Inverte as dimensões
-            canvas.height = photoBitmap.width;
-          } else {
-            canvas.width = photoBitmap.width;
-            canvas.height = photoBitmap.height;
-          }
-
+          // Converter ImageBitmap para Blob
+          const canvas = document.createElement('canvas');
+          canvas.width = photoBitmap.width;
+          canvas.height = photoBitmap.height;
           const ctx = canvas.getContext('2d');
+          ctx.drawImage(photoBitmap, 0, 0);
           
-          ctx.drawImage(photoBitmap, 0, 0, canvas.width, canvas.height);
-
           photoBlob = await new Promise((resolve) => {
-            canvas.toBlob(resolve, 'image/jpeg', 0.9);
+            canvas.toBlob(resolve, 'image/jpeg', 1);
           });
         } catch (error) {
           console.warn('ImageCapture failed, falling back to canvas:', error);
@@ -194,25 +194,19 @@ export default class SCameraCaptureController {
       // Fallback para canvas se ImageCapture não estiver disponível ou falhar
       if (!photoBlob) {
         const videoElement = document.querySelector('.camera-preview');
+        if (!videoElement) throw new Error('Video element not found');
         
-        // Configuração para câmera frontal (retrato)
-        if (this.settings.facingMode === 'user') {
-          canvas.width = videoElement.videoHeight;
-          canvas.height = videoElement.videoWidth;
-        } else {
-          canvas.width = videoElement.videoWidth;
-          canvas.height = videoElement.videoHeight;
-        }
-
+        const canvas = document.createElement('canvas');
+        canvas.width = videoElement.videoWidth;
+        canvas.height = videoElement.videoHeight;
         const ctx = canvas.getContext('2d');
-        
         ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
         
         photoBlob = await new Promise((resolve) => {
-          canvas.toBlob(resolve, 'image/jpeg', 0.9);
+          canvas.toBlob(resolve, 'image/jpeg', 1);
         });
       }
-      
+
       this.blob = photoBlob;
 
       const compressed = this.compress(
