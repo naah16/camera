@@ -60,7 +60,7 @@ export default class SCameraUIController {
     const flashBtn = this.createFlashBtn();
     flashBtn.className += ' mobile-flash';
     
-    const zoomControl = this.createZoomControl();
+    const zoomControl = await this.createZoomControl();
     zoomControl.className += ' mobile-zoom';
 
     const leaveCameraBtn = this.createLeaveCameraBtn();
