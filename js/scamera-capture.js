@@ -228,6 +228,19 @@ export default class SCameraCaptureController {
     }));
   }
 
+  waitForCapabilities() {
+    return new Promise((resolve) => {
+      const check = () => {
+        if (this.capabilities?.zoom) {
+          resolve();
+        } else {
+          setTimeout(check, 100);
+        }
+      };
+      check();
+    });
+  }
+
   setZoom(zoomValue) {
     if (!this.videoTrack || !this.capabilities?.zoom) {
       console.log('Zoom not supported');

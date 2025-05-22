@@ -232,66 +232,92 @@ export default class SCameraUIController {
     return flashBtn;
   }
 
-  createZoomControl() {
+  async createZoomControl() {
     const zoomControl = document.createElement('div');
     zoomControl.className = 'zoom-slider-container';
 
-    const zoomValueLabel = document.createElement('div');
-    zoomValueLabel.className = 'zoom-value-label';
-    zoomValueLabel.textContent = 'x1.0';
+    const zoomOptionsContainer = document.createElement('div');
+    zoomOptionsContainer.className = 'zoom-options-container';
 
     const containerSliderTrack = document.createElement('div');
     containerSliderTrack.className = 'zoom-slider-track-container';
+    containerSliderTrack.style.display = 'none';
 
     const sliderTrack = document.createElement('div');
     sliderTrack.className = 'zoom-slider-track';
 
-    // Indicador visual
     const visualIndicator = document.createElement('div');
     visualIndicator.className = 'zoom-indicator';
 
-    // Indicador invisível (melhor usabilidade)
     const touchArea = document.createElement('div');
     touchArea.className = 'zoom-touch-area';
 
-    containerSliderTrack.appendChild(sliderTrack);
     sliderTrack.appendChild(visualIndicator);
     sliderTrack.appendChild(touchArea);
-    zoomControl.appendChild(zoomValueLabel);
+    containerSliderTrack.appendChild(sliderTrack);
+
+    zoomControl.appendChild(zoomOptionsContainer);
     zoomControl.appendChild(containerSliderTrack);
 
-    // Salva referências
-    this.zoomValueLabel = zoomValueLabel;
     this.zoomIndicator = visualIndicator;
     this.zoomTrack = sliderTrack;
 
-    // Oculta se for câmera frontal
-    if (SCamera.currentConfig.facingMode === 'user') {
+    await SCamera.captureController.waitForCapabilities?.();
+
+    const zoomCap = SCamera.captureController.capabilities.zoom;
+
+    if (!zoomCap) {
+      console.warn('Zoom não suportado.');
       zoomControl.style.display = 'none';
+      return zoomControl;
     }
 
-    // Define step fixo de 0.5
+    const { min, max } = zoomCap;
     const STEP = 0.5;
 
+    const zoomSteps = [1, 2, 3, max];
+
+    zoomSteps.forEach((zoomValue) => {
+      const label = document.createElement('div');
+      label.className = 'zoom-value-label';
+      label.textContent = `x${zoomValue.toFixed(1)}`;
+
+      label.addEventListener('click', () => {
+        SCamera.captureController.setZoom(zoomValue);
+
+        // Atualiza indicador
+        const percent = (zoomValue - min) / (max - min);
+        visualIndicator.style.left = `${percent * 100}%`;
+
+        containerSliderTrack.style.display = 'flex';
+
+        document.querySelectorAll('.zoom-value-label').forEach(el => {
+          el.classList.remove('active');
+        });
+        label.classList.add('active');
+      });
+
+      zoomOptionsContainer.appendChild(label);
+    });
+
+    // Atualiza via slider
     const handleZoomChange = (event) => {
       const rect = sliderTrack.getBoundingClientRect();
       const x = event.touches ? event.touches[0].clientX : event.clientX;
       const percent = (x - rect.left) / rect.width;
       const clamped = Math.min(Math.max(percent, 0), 1);
-
-      const { min, max } = SCamera.captureController.capabilities.zoom;
-      let rawZoom = min + clamped * (max - min);
-
-      // Aplica step de 0.5
+      const rawZoom = min + clamped * (max - min);
       const zoomValue = Math.round(rawZoom / STEP) * STEP;
 
-      // Atualiza UI
+      SCamera.captureController.setZoom(zoomValue);
+
       const percentAdjusted = (zoomValue - min) / (max - min);
       visualIndicator.style.left = `${percentAdjusted * 100}%`;
-      zoomValueLabel.textContent = `x${(zoomValue / min).toFixed(1)}`;
 
-      // Aplica o zoom
-      SCamera.captureController.setZoom(zoomValue);
+      // Remove destaque de zoom fixo
+      document.querySelectorAll('.zoom-value-label').forEach(el => {
+        el.classList.remove('active');
+      });
     };
 
     touchArea.addEventListener('mousedown', (e) => {
@@ -304,6 +330,13 @@ export default class SCameraUIController {
 
     touchArea.addEventListener('touchstart', handleZoomChange);
     touchArea.addEventListener('touchmove', handleZoomChange);
+
+    // Oculta o slider ao clicar fora
+    document.addEventListener('click', (e) => {
+      if (!zoomControl.contains(e.target)) {
+        containerSliderTrack.style.display = 'none';
+      }
+    });
 
     return zoomControl;
   }
