@@ -6,7 +6,7 @@ export default class SCameraUIController {
 
   init() {
     this.createCameraPreview();
-    // this.setupOrientationListener();
+    this.setupOrientationListener();
   }
 
   createCameraPreview() {
@@ -591,39 +591,44 @@ export default class SCameraUIController {
     });
   }
 
-  // setupOrientationListener() {
-  //   if (window.DeviceMotionEvent && typeof DeviceMotionEvent.requestPermission === 'function') {
-  //     DeviceMotionEvent.requestPermission().then(response => {
-  //       if (response === 'granted') {
-  //         window.addEventListener("devicemotion", this.handleOrientationChange.bind(this));
-  //       }
-  //     }).catch(console.error);
-  //   } else {
-  //     window.addEventListener("devicemotion", this.handleOrientationChange.bind(this));
-  //   }
-  // }
+  setupOrientationListener() {
+    if (window.DeviceMotionEvent && typeof DeviceMotionEvent.requestPermission === 'function') {
+      DeviceMotionEvent.requestPermission().then(response => {
+        if (response === 'granted') {
+          window.addEventListener("devicemotion", this.handleOrientationChange.bind(this));
+        }
+      }).catch(console.error);
+    } else {
+      window.addEventListener("devicemotion", this.handleOrientationChange.bind(this));
+    }
+  }
 
-  // handleOrientationChange(event) {
-  //   const x = event.accelerationIncludingGravity.x;
-  //   let rotation = 0;
+  handleOrientationChange(event) {
+    const x = event.accelerationIncludingGravity.x;
+    let rotation = 0;
+    let orientation;
+    
+    if (x > 7) {
+      rotation = -90; // Landscape Left
+      orientation = 'landscape-left';
+    } else if (x < -7) {
+      rotation = 90;  // Landscape Right
+      orientation = 'landscape-right';
+    } else {
+      rotation = 0;   // Portrait
+      orientation = 'portrait';
+    }
+    console.log('orientação: ', orientation);
 
-  //   if (x > 7) {
-  //     rotation = -90; // Landscape Left
-  //   } else if (x < -7) {
-  //     rotation = 90;  // Landscape Right
-  //   } else {
-  //     rotation = 0;   // Portrait
-  //   }
+    this.rotateIcons(rotation);
+  }
 
-  //   this.rotateIcons(rotation);
-  // }
+  rotateIcons(degrees) {
+    const icons = document.querySelectorAll('.mobile-controls, .mobile-actions-container');
 
-  // rotateIcons(degrees) {
-  //   const icons = document.querySelectorAll('.icons-actions-container, .zoom-value-label');
-
-  //   icons.forEach(icon => {
-  //     icon.style.transition = 'transform 0.3s ease';
-  //     icon.style.transform = `rotate(${degrees}deg)`;
-  //   });
-  // }
+    icons.forEach(icon => {
+      icon.style.transition = 'transform 0.3s ease';
+      icon.style.transform = `rotate(${degrees}deg)`;
+    });
+  }
 }
