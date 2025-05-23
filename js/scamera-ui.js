@@ -6,8 +6,7 @@ export default class SCameraUIController {
 
   init() {
     this.createCameraPreview();
-    this.setupEventListeners();
-    this.setupOrientationListener();
+    // this.setupOrientationListener();
   }
 
   createCameraPreview() {
@@ -595,73 +594,39 @@ export default class SCameraUIController {
     });
   }
 
-  setupOrientationListener() {
-    if (window.DeviceMotionEvent && typeof DeviceMotionEvent.requestPermission === 'function') {
-      DeviceMotionEvent.requestPermission().then(response => {
-        if (response === 'granted') {
-          window.addEventListener("devicemotion", this.handleOrientationChange.bind(this));
-        }
-      }).catch(console.error);
-    } else {
-      window.addEventListener("devicemotion", this.handleOrientationChange.bind(this));
-    }
-  }
+  // setupOrientationListener() {
+  //   if (window.DeviceMotionEvent && typeof DeviceMotionEvent.requestPermission === 'function') {
+  //     DeviceMotionEvent.requestPermission().then(response => {
+  //       if (response === 'granted') {
+  //         window.addEventListener("devicemotion", this.handleOrientationChange.bind(this));
+  //       }
+  //     }).catch(console.error);
+  //   } else {
+  //     window.addEventListener("devicemotion", this.handleOrientationChange.bind(this));
+  //   }
+  // }
 
-  handleOrientationChange(event) {
-    const x = event.accelerationIncludingGravity.x;
-    let rotation = 0;
+  // handleOrientationChange(event) {
+  //   const x = event.accelerationIncludingGravity.x;
+  //   let rotation = 0;
 
-    if (x > 7) {
-      rotation = -90; // Landscape Left
-    } else if (x < -7) {
-      rotation = 90;  // Landscape Right
-    } else {
-      rotation = 0;   // Portrait
-    }
+  //   if (x > 7) {
+  //     rotation = -90; // Landscape Left
+  //   } else if (x < -7) {
+  //     rotation = 90;  // Landscape Right
+  //   } else {
+  //     rotation = 0;   // Portrait
+  //   }
 
-    this.rotateIcons(rotation);
-  }
+  //   this.rotateIcons(rotation);
+  // }
 
-  rotateIcons(degrees) {
-    const icons = document.querySelectorAll('.icons-actions-container, .zoom-value-label');
+  // rotateIcons(degrees) {
+  //   const icons = document.querySelectorAll('.icons-actions-container, .zoom-value-label');
 
-    icons.forEach(icon => {
-      icon.style.transition = 'transform 0.3s ease';
-      icon.style.transform = `rotate(${degrees}deg)`;
-    });
-  }
-
-  setupEventListeners() {
-    // toque para controles móveis
-    if (this.isMobile) {
-      let touchStartY = 0;
-      let touchStartZoom = 1;
-      
-      document.addEventListener('touchstart', (e) => {
-        if (e.touches.length === 2) {
-          // Pinch zoom
-          touchStartZoom = SCamera.currentConfig.zoom;
-        } else if (e.touches.length === 1) {
-          touchStartY = e.touches[0].clientY;
-        }
-      }, { passive: true });
-      
-      document.addEventListener('touchmove', (e) => {
-        if (e.touches.length === 2) {
-          // Calcular distância entre dedos para zoom
-          const dist = Math.hypot(
-            e.touches[0].clientX - e.touches[1].clientX,
-            e.touches[0].clientY - e.touches[1].clientY
-          );
-          const startDist = Math.hypot(
-            e.touches[0].clientX - e.touches[1].clientX,
-            e.touches[0].clientY - e.touches[1].clientY
-          );
-          
-          const zoom = touchStartZoom * (dist / startDist);
-          SCamera.setZoom(Math.max(1, Math.min(3, zoom)));
-        }
-      }, { passive: true });
-    }
-  }
+  //   icons.forEach(icon => {
+  //     icon.style.transition = 'transform 0.3s ease';
+  //     icon.style.transform = `rotate(${degrees}deg)`;
+  //   });
+  // }
 }
