@@ -2,6 +2,8 @@ export default class SCameraUIController {
   constructor() {
     this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     this.photoPreview = null;
+    this.orientation = null;
+    this.rotation = 0;
   }
 
   init() {
@@ -659,6 +661,8 @@ export default class SCameraUIController {
     }
     console.log('orientação: ', orientation);
 
+    this.orientation = orientation;
+    this.rotation = rotation;
     this.rotateIcons(rotation);
   }
 

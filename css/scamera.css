@@ -2,6 +2,10 @@ body {
   font-family: "Open Sans", "Helvetica Neue", sans-serif;
 }
 
+.camera-container * {
+  -webkit-tap-highlight-color: transparent;
+}
+
 .camera-container {
   position: fixed;
   top: 0;
