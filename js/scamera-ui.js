@@ -46,6 +46,7 @@ export default class SCameraUIController {
   }
 
   async createMobileControls(container) {
+    console.log('Creating mobile controls');
     const controlsContainer = document.createElement('div');
     const actionsContainer = document.createElement('div');
 
