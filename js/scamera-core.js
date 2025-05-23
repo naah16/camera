@@ -21,8 +21,8 @@ let SCamera = {
     SCamera.captureController = new SCameraCaptureController();
     
     try {
-      SCamera.uiController.init();
       await SCamera.captureController.init();
+      SCamera.uiController.init();
       await SCamera.loadDevices();
     } catch (error) {
       console.error('Initialization error:', error);
