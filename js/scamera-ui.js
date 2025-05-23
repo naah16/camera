@@ -212,7 +212,7 @@ export default class SCameraUIController {
     }
 
     const flashBtn = document.createElement('button');
-    flashBtn.className += ' mobile-flash';
+
     const svgEnabled = `
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icons-actions-container"><title>flash</title>
         <path d="M7,2V13H10V22L17,10H13L17,2H7Z" />
@@ -225,7 +225,7 @@ export default class SCameraUIController {
     `;
     
     flashBtn.id = 'flash-btn';
-    flashBtn.className = 'flash-btn';
+    flashBtn.className = 'flash-btn mobile-flash';
     flashBtn.innerHTML = svgDisabled;
 
     flashBtn.addEventListener('click', async () => {
@@ -241,7 +241,7 @@ export default class SCameraUIController {
     });
     
     if (container) {
-      container.appendChild(flashBtn);
+      container.prepend(flashBtn);
     }
   }
 
