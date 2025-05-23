@@ -48,9 +48,12 @@ export default class SCameraUIController {
   async createMobileControls(container) {
     const controlsContainer = document.createElement('div');
     const actionsContainer = document.createElement('div');
+    const flashContainer = document.createElement('div');
+
 
     controlsContainer.className = 'mobile-controls';
     actionsContainer.className = 'mobile-actions-container';
+    flashContainer.className = 'mobile-flash-container';
 
     const shutterBtn = this.createShutterBtn();
     
@@ -59,6 +62,7 @@ export default class SCameraUIController {
 
     const leaveCameraBtn = this.createLeaveCameraBtn();
     
+    actionsContainer.appendChild(flashContainer);
     actionsContainer.appendChild(shutterBtn);
     actionsContainer.appendChild(switchCamBtn);
     controlsContainer.appendChild(actionsContainer);
@@ -202,7 +206,7 @@ export default class SCameraUIController {
     let container;
 
     if (this.isMobile) {
-      container = document.querySelector(".mobile-actions-container");
+      container = document.querySelector(".mobile-flash-container");
     }
 
     const flashCap = SCamera.captureController.capabilities?.torch;

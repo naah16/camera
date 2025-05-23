@@ -233,6 +233,12 @@ body {
   z-index: 1000;
 }
 
+.mobile-flash-container {
+  user-select: none;
+  width: 45px;
+  height: 45px;
+}
+
 .mobile-switch, .mobile-flash, .leave-camera-btn {
   user-select: none;
   width: 45px;
