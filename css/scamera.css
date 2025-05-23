@@ -78,6 +78,14 @@ body {
   align-items: center;
 }
 
+.zoom-options {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 180px;
+}
+
 .zoom-options-container {
   display: flex;
   justify-content: center;
@@ -86,7 +94,15 @@ body {
   border-radius: 90px;
   background: rgba(0, 0, 0, 0.2);
   padding: 5px;
-  margin-bottom: 140px;
+}
+
+.custom-zoom-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  border-radius: 90px;
+  background: rgba(0, 0, 0, 0.2);
 }
 
 .zoom-value-label {

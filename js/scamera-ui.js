@@ -240,6 +240,12 @@ export default class SCameraUIController {
     const zoomOptionsContainer = document.createElement('div');
     zoomOptionsContainer.className = 'zoom-options-container';
 
+    const zoomOptions = document.createElement('div');
+    zoomOptions.className = 'zoom-options';
+
+    const customZoomContainer = document.createElement('div');
+    customZoomContainer.className = 'custom-zoom-container';
+
     const containerSliderTrack = document.createElement('div');
     containerSliderTrack.className = 'zoom-slider-track-container';
     containerSliderTrack.style.display = 'none';
@@ -257,7 +263,9 @@ export default class SCameraUIController {
     sliderTrack.appendChild(touchArea);
     containerSliderTrack.appendChild(sliderTrack);
 
-    zoomControl.appendChild(zoomOptionsContainer);
+    zoomOptions.appendChild(zoomOptionsContainer);
+    zoomOptions.appendChild(customZoomContainer);
+    zoomControl.appendChild(zoomOptions);
     zoomControl.appendChild(containerSliderTrack);
 
     this.zoomIndicator = visualIndicator;
@@ -265,6 +273,12 @@ export default class SCameraUIController {
 
     await SCamera.captureController.waitForCapabilities?.();
     const zoomCap = SCamera.captureController.capabilities.zoom;
+    const isFrontal = SCamera.currentConfig.facingMode === 'user';
+
+    if (isFrontal) {
+      zoomControl.style.display = 'none';
+      return zoomControl;
+    }
 
     if (!zoomCap) {
       console.warn('Zoom não suportado.');
@@ -279,8 +293,11 @@ export default class SCameraUIController {
     let sliderLabel = null;
     let isExpanded = false;
     const predefinedLabels = {};
+    let isDragging = false;
+    let scrollTimeout;
 
     const formatZoom = (value) => `x${value % 1 === 0 ? value : value.toFixed(1).replace('.0', '')}`;
+    // const isPredefinedZoom = (val) => zoomSteps.includes(parseFloat(val));
 
     const createZoomLabel = (zoomValue) => {
       const label = document.createElement('div');
@@ -290,33 +307,24 @@ export default class SCameraUIController {
 
       label.addEventListener('click', (e) => {
         e.stopPropagation();
+        const clickedZoom = parseFloat(label.dataset.zoom);
 
         if (lastClickedLabel === label && isExpanded) {
           containerSliderTrack.style.display = 'flex';
-          zoomOptionsContainer.style.marginBottom = '5px';
+          zoomOptions.style.marginBottom = '15px';
           return;
         }
 
-        if (!isExpanded) {
-          zoomSteps.slice(1).forEach(value => {
-            if (!zoomOptionsContainer.querySelector(`.zoom-value-label[data-zoom="${value}"]`)) {
-              const newLabel = predefinedLabels[value] ?? createZoomLabel(value);
-              predefinedLabels[value] = newLabel;
-              zoomOptionsContainer.appendChild(newLabel);
-            }
-          });
-          isExpanded = true;
-        }
-
-        SCamera.captureController.setZoom(zoomValue);
-        currentZoom = zoomValue;
+        isExpanded = true;
+        SCamera.captureController.setZoom(clickedZoom);
+        currentZoom = clickedZoom;
         lastClickedLabel = label;
 
-        const percent = (zoomValue - min) / (max - min);
+        const percent = (clickedZoom - min) / (max - min);
         visualIndicator.style.left = `${percent * 100}%`;
 
         containerSliderTrack.style.display = 'none';
-        zoomOptionsContainer.style.marginBottom = '140px';
+        zoomOptions.style.marginBottom = '180px';
 
         document.querySelectorAll('.zoom-value-label').forEach(el => el.classList.remove('active'));
         label.classList.add('active');
@@ -325,18 +333,48 @@ export default class SCameraUIController {
       return label;
     };
 
-    // Cria labels predefinidas e salva para uso posterior
     zoomSteps.forEach((zoomVal) => {
       const label = createZoomLabel(zoomVal);
       predefinedLabels[zoomVal] = label;
+      zoomOptionsContainer.appendChild(label);
     });
 
-    // Mostra apenas a x1 inicialmente
-    zoomOptionsContainer.appendChild(predefinedLabels[1]);
     predefinedLabels[1].classList.add('active');
     lastClickedLabel = predefinedLabels[1];
 
-    let isDragging = false;
+    const startScroll = () => {
+      isDragging = true;
+      zoomOptionsContainer.style.display = 'none';
+      customZoomContainer.innerHTML = '';
+      if (sliderLabel) customZoomContainer.appendChild(sliderLabel);
+    };
+
+    const endScroll = () => {
+      isDragging = false;
+
+      const matched = zoomSteps.find(v => Math.abs(v - currentZoom) < 0.1);
+
+      zoomOptionsContainer.innerHTML = '';
+      zoomSteps.forEach(val => {
+        const label = predefinedLabels[val];
+        zoomOptionsContainer.appendChild(label);
+      });
+
+      if (matched !== undefined) {
+        customZoomContainer.innerHTML = '';
+        document.querySelectorAll('.zoom-value-label').forEach(el => el.classList.remove('active'));
+        predefinedLabels[matched].classList.add('active');
+        lastClickedLabel = predefinedLabels[matched];
+      } else {
+        customZoomContainer.innerHTML = '';
+        if (sliderLabel) {
+          customZoomContainer.appendChild(sliderLabel);
+          sliderLabel.classList.add('active');
+        }
+      }
+
+      zoomOptionsContainer.style.display = 'flex';
+    };
 
     const updateZoomFromPercent = (percent) => {
       const newZoom = min + (max - min) * percent;
@@ -348,11 +386,20 @@ export default class SCameraUIController {
 
       if (sliderLabel) sliderLabel.remove();
       sliderLabel = createZoomLabel(clampedZoom);
-      zoomOptionsContainer.appendChild(sliderLabel);
+
+      customZoomContainer.innerHTML = '';
+      customZoomContainer.appendChild(sliderLabel);
 
       document.querySelectorAll('.zoom-value-label').forEach(el => el.classList.remove('active'));
       sliderLabel.classList.add('active');
       lastClickedLabel = sliderLabel;
+
+      startScroll();
+
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        endScroll();
+      }, 500);
     };
 
     const handlePositionUpdate = (clientX) => {
@@ -373,7 +420,7 @@ export default class SCameraUIController {
     });
 
     window.addEventListener('mouseup', () => {
-      isDragging = false;
+      if (isDragging) endScroll();
     });
 
     // Touch events
@@ -387,27 +434,26 @@ export default class SCameraUIController {
     }, { passive: true });
 
     window.addEventListener('touchend', () => {
-      isDragging = false;
+      if (isDragging) endScroll();
     });
 
-    // Fecha o slider e mantém apenas a última opção visível
     document.addEventListener('click', (e) => {
       if (!zoomControl.contains(e.target)) {
         containerSliderTrack.style.display = 'none';
-        zoomOptionsContainer.style.marginBottom = '140px';
+        zoomOptions.style.marginBottom = '180px';
 
-        // Remove todas as labels
         zoomOptionsContainer.innerHTML = '';
+        zoomSteps.forEach(val => {
+          const label = predefinedLabels[val];
+          zoomOptionsContainer.appendChild(label);
+        });
 
-        const zoomValue = parseFloat(lastClickedLabel.dataset.zoom);
-
-        if (predefinedLabels[zoomValue]) {
-          zoomOptionsContainer.appendChild(predefinedLabels[zoomValue]);
-          lastClickedLabel = predefinedLabels[zoomValue];
-        } else {
-          zoomOptionsContainer.appendChild(lastClickedLabel);
+        customZoomContainer.innerHTML = '';
+        if (sliderLabel) {
+          customZoomContainer.appendChild(sliderLabel);
         }
 
+        document.querySelectorAll('.zoom-value-label').forEach(el => el.classList.remove('active'));
         lastClickedLabel.classList.add('active');
         isExpanded = false;
       }
