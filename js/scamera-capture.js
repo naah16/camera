@@ -182,18 +182,19 @@ export default class SCameraCaptureController {
           case 'landscape-left':
             canvas.width = height;
             canvas.height = width;
+            ctx.translate(height, 0); // move para a direita
             ctx.rotate(90 * Math.PI / 180);
-            ctx.translate(0, -height);
             break;
           case 'landscape-right':
             canvas.width = height;
             canvas.height = width;
+            ctx.translate(0, width); // move para baixo
             ctx.rotate(-90 * Math.PI / 180);
-            ctx.translate(-width, 0);
             break;
           default: // portrait
             canvas.width = width;
             canvas.height = height;
+            // sem rotação
             break;
         }
       };
