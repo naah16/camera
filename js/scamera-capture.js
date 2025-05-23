@@ -70,11 +70,12 @@ export default class SCameraCaptureController {
         }
       }
       
+      const isPortrait = screen.availHeight > screen.availWidth;
       // Atualiza configurações no SCamera
       SCamera.currentConfig.deviceId = this.currentDeviceId;
       SCamera.currentConfig.resolution = {
-        width: this.settings.width,
-        height: this.settings.height
+        width: isPortrait ? this.settings.height : this.settings.width,
+        height: isPortrait ? this.settings.width : this.settings.height
       };
       
       return stream;
@@ -102,10 +103,17 @@ export default class SCameraCaptureController {
     SCamera.currentConfig.facingMode = SCamera.currentConfig.facingMode == "user" ? "environment" : "user";
     
     const videoElement = document.querySelector('.camera-preview');
+    const zoomElement = document.querySelector('.zoom-slider-container');
     if (SCamera.currentConfig.facingMode == "user") {
       videoElement.style.transform = 'scaleX(-1)';
+      if (zoomElement) {
+        zoomElement.style.display = 'none';
+      }
     } else {
       videoElement.style.transform = 'scaleX(1)';
+      if (zoomElement) {
+        zoomElement.style.display = 'flex';
+      }
     }
 
     try {
@@ -237,19 +245,6 @@ export default class SCameraCaptureController {
       cancelable: true,
       composed: true
     }));
-  }
-
-  waitForCapabilities() {
-    return new Promise((resolve) => {
-      const check = () => {
-        if (this.capabilities?.zoom) {
-          resolve();
-        } else {
-          setTimeout(check, 100);
-        }
-      };
-      check();
-    });
   }
 
   setZoom(zoomValue) {
