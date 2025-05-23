@@ -376,11 +376,14 @@ body {
 }
 
 .photo-actions {
+  gap: 15px;
   position: absolute;
   bottom: 0;
   display: flex;
-  width: 100%;
-  justify-content: center;
+  justify-content: space-between;
+  padding: 20px;
+  right: 0;
+  left: 0;
 }
 
 .photo-action-btn {
@@ -393,6 +396,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  gap: 8px;
   cursor: pointer;
 }
 
