@@ -573,8 +573,10 @@ export default class SCameraUIController {
     errorContainer.className = 'camera-error';
     errorContainer.innerHTML = `
       <p>${message}</p>
-      <button id="retry-camera-btn">Tente novamente</button>
-      <button id="exit-camera-btn">Sair</button>
+      <div style="display: flex; gap: 10px; justify-content: center;">
+        <button id="retry-camera-btn">Tente novamente</button>
+        <button id="exit-camera-btn">Sair</button>
+      </div>
     `;
     
     viewfinder.appendChild(errorContainer);

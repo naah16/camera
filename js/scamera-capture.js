@@ -13,7 +13,10 @@ export default class SCameraCaptureController {
   }
 
   async init() {
-    this.currentStream = await navigator.mediaDevices.getUserMedia();
+    this.currentStream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: true
+    });
     await this.getCameraStream();
   }
 
