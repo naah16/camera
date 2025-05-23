@@ -388,8 +388,8 @@ body {
 
 .photo-action-btn {
   border: none;
-  width: 100px;
-  height: 50px;
+  width: 120px;
+  height: 40px;
   border-radius: 50px;
   color: white;
   font-weight: bold;
@@ -424,11 +424,14 @@ body {
 
 .photo-actions-desktop {
   position: absolute;
+  padding: 20px;
   bottom: 10px;
   display: flex;
   gap: 30px;
   width: 100%;
   justify-content: center;
+  right: 0;
+  left: 0;
 }
 
 .photo-action-btn-desktop {
@@ -444,7 +447,19 @@ body {
   cursor: pointer;
 }
 
-.photo-action-btn-desktop:hover {
+.photo-action-btn-desktop.download-btn {
+  background:rgb(47, 142, 229);
+}
+
+.photo-action-btn-desktop.close-btn {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.photo-action-btn-desktop.download-btn:hover {
+  background-color: #1B7EDA;
+}
+
+.photo-action-btn-desktop.close-btn:hover {
   background-color: rgba(0, 0, 0, 0.5);
 }
 
