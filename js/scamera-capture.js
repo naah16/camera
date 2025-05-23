@@ -176,45 +176,44 @@ export default class SCameraCaptureController {
       let photoBlob;
 
       const orientation = SCamera.uiController?.orientation || 'portrait';
-      const rotation = SCamera.uiController?.rotation || 0;
-      const applyRotation = (ctx, canvas, width, height) => {
+      const facingMode = this.settings.facingMode;
+
+      const applyCanvasTransform = (ctx, canvas, width, height, orientation, facingMode) => {
         switch (orientation) {
           case 'landscape-left':
             canvas.width = height;
             canvas.height = width;
-            ctx.translate(height, 0); // move para a direita
+            ctx.translate(height, 0);
             ctx.rotate(90 * Math.PI / 180);
             break;
           case 'landscape-right':
             canvas.width = height;
             canvas.height = width;
-            ctx.translate(0, width); // move para baixo
+            ctx.translate(0, width);
             ctx.rotate(-90 * Math.PI / 180);
             break;
           default: // portrait
             canvas.width = width;
             canvas.height = height;
-            // sem rotação
             break;
+        }
+
+        if (facingMode === 'user') {
+          ctx.scale(-1, 1);
+          ctx.translate(-canvas.width, 0);
         }
       };
 
+      // Tentar usar ImageCapture para melhor qualidade
       if (this.imageCapture) {
         try {
           const photoBitmap = await this.imageCapture.grabFrame();
+
           const canvas = document.createElement('canvas');
           const ctx = canvas.getContext('2d');
 
-          applyRotation(ctx, canvas, photoBitmap.width, photoBitmap.height);
-
-          if (this.settings.facingMode === 'user') {
-            ctx.scale(-1, 1);
-            ctx.drawImage(photoBitmap, -photoBitmap.width, 0);
-          } else {
-            ctx.drawImage(photoBitmap, 0, 0);
-          }
-
-          console.log('orientação captura:', orientation);
+          applyCanvasTransform(ctx, canvas, photoBitmap.width, photoBitmap.height, orientation, facingMode);
+          ctx.drawImage(photoBitmap, 0, 0);
 
           photoBlob = await new Promise((resolve) => {
             canvas.toBlob(resolve, 'image/jpeg', 1);
@@ -224,6 +223,7 @@ export default class SCameraCaptureController {
         }
       }
 
+      // Fallback para canvas se ImageCapture não estiver disponível ou falhar
       if (!photoBlob) {
         const videoElement = document.querySelector('.camera-preview');
         if (!videoElement) throw new Error('Video element not found');
@@ -231,16 +231,8 @@ export default class SCameraCaptureController {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
 
-        applyRotation(ctx, canvas, videoElement.videoWidth, videoElement.videoHeight);
-
-        if (this.settings.facingMode === 'user') {
-          ctx.scale(-1, 1);
-          ctx.drawImage(videoElement, -videoElement.videoWidth, 0);
-        } else {
-          ctx.drawImage(videoElement, 0, 0);
-        }
-
-        console.log('orientação capturada:', orientation);
+        applyCanvasTransform(ctx, canvas, videoElement.videoWidth, videoElement.videoHeight, orientation, facingMode);
+        ctx.drawImage(videoElement, 0, 0, videoElement.videoWidth, videoElement.videoHeight);
 
         photoBlob = await new Promise((resolve) => {
           canvas.toBlob(resolve, 'image/jpeg', 1);
@@ -254,7 +246,7 @@ export default class SCameraCaptureController {
         1920
       );
 
-      compressed.name = `photo-${Date.now()}.jpg`;
+      compressed.name = `photo-${new Date().getTime()}.jpg`;
       this.blob = compressed;
 
       return compressed;
