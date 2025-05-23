@@ -46,7 +46,6 @@ export default class SCameraUIController {
   }
 
   async createMobileControls(container) {
-    console.log('Creating mobile controls');
     const controlsContainer = document.createElement('div');
     const actionsContainer = document.createElement('div');
 
@@ -60,16 +59,12 @@ export default class SCameraUIController {
     
     const flashBtn = this.createFlashBtn();
     flashBtn.className += ' mobile-flash';
-    
-    const zoomControl = await this.createZoomControl();
-    zoomControl.className += ' mobile-zoom';
 
     const leaveCameraBtn = this.createLeaveCameraBtn();
     
     actionsContainer.appendChild(flashBtn);
     actionsContainer.appendChild(shutterBtn);
     actionsContainer.appendChild(switchCamBtn);
-    controlsContainer.appendChild(zoomControl);
     controlsContainer.appendChild(actionsContainer);
     container.appendChild(leaveCameraBtn);
     container.appendChild(controlsContainer);
@@ -234,6 +229,8 @@ export default class SCameraUIController {
   }
 
   async createZoomControl() {
+    const container = document.querySelector(".mobile-controls");
+
     const zoomControl = document.createElement('div');
     zoomControl.className = 'zoom-slider-container';
 
@@ -270,21 +267,17 @@ export default class SCameraUIController {
 
     this.zoomIndicator = visualIndicator;
     this.zoomTrack = sliderTrack;
-
-    await SCamera.captureController.waitForCapabilities?.();
+    
     const zoomCap = SCamera.captureController.capabilities?.zoom;
-    console.log('Zoom capabilities foi carregado');
     const isFrontal = SCamera.currentConfig.facingMode === 'user';
 
     if (isFrontal) {
-      zoomControl.style.display = 'none';
-      return zoomControl;
+      return;
     }
 
     if (!zoomCap) {
       console.warn('Zoom não suportado.');
-      zoomControl.style.display = 'none';
-      return zoomControl;
+      return;
     }
 
     const { min, max } = zoomCap;
@@ -460,7 +453,7 @@ export default class SCameraUIController {
       }
     });
 
-    return zoomControl;
+    container.appendChild(zoomControl);
   }
 
   showPhotoPreview(photoBlob) {
