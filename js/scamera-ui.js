@@ -229,7 +229,11 @@ export default class SCameraUIController {
   }
 
   async createZoomControl() {
-    const container = document.querySelector(".mobile-controls");
+    let container;
+
+    if (this.isMobile) {
+      container = document.querySelector(".mobile-controls");
+    }
 
     const zoomControl = document.createElement('div');
     zoomControl.className = 'zoom-slider-container';
@@ -303,6 +307,7 @@ export default class SCameraUIController {
         e.stopPropagation();
         const clickedZoom = parseFloat(label.dataset.zoom);
 
+        // Caso o mesmo label tenha sido clicado e esteja expandido
         if (lastClickedLabel === label && isExpanded) {
           containerSliderTrack.style.display = 'flex';
           zoomOptions.style.marginBottom = '15px';
@@ -322,6 +327,9 @@ export default class SCameraUIController {
 
         document.querySelectorAll('.zoom-value-label').forEach(el => el.classList.remove('active'));
         label.classList.add('active');
+
+        // Oculta o valor customizado ao clicar em um zoom pré-definido
+        customZoomContainer.innerHTML = '';
       });
 
       return label;
@@ -453,7 +461,9 @@ export default class SCameraUIController {
       }
     });
 
-    container.appendChild(zoomControl);
+    if (container) {
+      container.appendChild(zoomControl);
+    }
   }
 
   showPhotoPreview(photoBlob) {
