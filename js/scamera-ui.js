@@ -7,6 +7,7 @@ export default class SCameraUIController {
   init() {
     this.createCameraPreview();
     this.setupEventListeners();
+    this.setupOrientationListener();
   }
 
   createCameraPreview() {
@@ -87,11 +88,9 @@ export default class SCameraUIController {
     
     const shutterBtn = this.createShutterBtn();
     const leaveCameraBtn = this.createLeaveCameraBtn();
-    const zoomControl = await this.createZoomControl();
     
     controlsContainer.appendChild(topBar);
     controlsContainer.appendChild(shutterBtn);
-    controlsContainer.appendChild(zoomControl);
     container.appendChild(leaveCameraBtn);
     container.appendChild(controlsContainer);
   }
@@ -547,6 +546,42 @@ export default class SCameraUIController {
     document.getElementById('exit-camera-btn').addEventListener('click', () => {
       errorContainer.remove();
       SCamera.closeCamera();
+    });
+  }
+
+  setupOrientationListener() {
+    if (window.DeviceMotionEvent && typeof DeviceMotionEvent.requestPermission === 'function') {
+      DeviceMotionEvent.requestPermission().then(response => {
+        if (response === 'granted') {
+          window.addEventListener("devicemotion", this.handleOrientationChange.bind(this));
+        }
+      }).catch(console.error);
+    } else {
+      window.addEventListener("devicemotion", this.handleOrientationChange.bind(this));
+    }
+  }
+
+  handleOrientationChange(event) {
+    const x = event.accelerationIncludingGravity.x;
+    let rotation = 0;
+
+    if (x > 7) {
+      rotation = -90; // Landscape Left
+    } else if (x < -7) {
+      rotation = 90;  // Landscape Right
+    } else {
+      rotation = 0;   // Portrait
+    }
+
+    this.rotateIcons(rotation);
+  }
+
+  rotateIcons(degrees) {
+    const icons = document.querySelectorAll('.icons-actions-container, .zoom-value-label');
+
+    icons.forEach(icon => {
+      icon.style.transition = 'transform 0.3s ease';
+      icon.style.transform = `rotate(${degrees}deg)`;
     });
   }
 
