@@ -609,10 +609,10 @@ export default class SCameraUIController {
     let orientation;
     
     if (x > 7) {
-      rotation = -90; // Landscape Left
+      rotation = 90; // Landscape Left
       orientation = 'landscape-left';
     } else if (x < -7) {
-      rotation = 90;  // Landscape Right
+      rotation = -90;  // Landscape Right
       orientation = 'landscape-right';
     } else {
       rotation = 0;   // Portrait
