@@ -14,8 +14,7 @@ export default class SCameraCaptureController {
 
   async init() {
     this.currentStream = await navigator.mediaDevices.getUserMedia({
-      video: true,
-      audio: true
+      video: true
     });
     await this.getCameraStream();
   }

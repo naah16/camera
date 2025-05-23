@@ -624,7 +624,7 @@ export default class SCameraUIController {
   }
 
   rotateIcons(degrees) {
-    const icons = document.querySelectorAll('.mobile-controls, .mobile-actions-container');
+    const icons = document.querySelectorAll('.mobile-switch, .mobile-flash, .zoom-value-label, .leave-camera-btn');
 
     icons.forEach(icon => {
       icon.style.transition = 'transform 0.3s ease';
