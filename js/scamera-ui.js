@@ -56,13 +56,9 @@ export default class SCameraUIController {
     
     const switchCamBtn = await this.createSwitchCamControl();
     switchCamBtn.className += ' mobile-switch';
-    
-    const flashBtn = this.createFlashBtn();
-    flashBtn.className += ' mobile-flash';
 
     const leaveCameraBtn = this.createLeaveCameraBtn();
     
-    actionsContainer.appendChild(flashBtn);
     actionsContainer.appendChild(shutterBtn);
     actionsContainer.appendChild(switchCamBtn);
     controlsContainer.appendChild(actionsContainer);
@@ -78,8 +74,10 @@ export default class SCameraUIController {
     topBar.className = 'desktop-top-bar';
     
     const switchCamBtn = await this.createSwitchCamControl();
-    
-    topBar.appendChild(switchCamBtn);
+
+    if (switchCamBtn) {
+      topBar.appendChild(switchCamBtn);
+    }
     
     const shutterBtn = this.createShutterBtn();
     const leaveCameraBtn = this.createLeaveCameraBtn();
@@ -94,8 +92,8 @@ export default class SCameraUIController {
     const leaveCameraBtn = document.createElement('button');
     leaveCameraBtn.className = 'leave-camera-btn';
     leaveCameraBtn.innerHTML = `
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icons-actions-container"><title>arrow-left-bottom</title>
-        <path d="M20 4V10.5C20 14.09 17.09 17 13.5 17H7.83L10.92 20.09L9.5 21.5L4 16L9.5 10.5L10.91 11.91L7.83 15H13.5C16 15 18 13 18 10.5V4H20Z" />
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icons-actions-container"><title>close</title>
+        <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
       </svg>
     `;
     
@@ -162,13 +160,17 @@ export default class SCameraUIController {
       
       return switchCamBtn;
     } else {
+      const cameras = await SCamera.listCameras();
+      
+      if(cameras.length < 2) {
+        return;
+      }
+
       const selectCam = document.createElement('select');
       selectCam.id = 'camera-select';
       selectCam.className = 'camera-select';
 
       // Popular opções
-      const cameras = await SCamera.listCameras();
-      
       cameras.forEach(camera => {
         const option = document.createElement('option');
         option.value = camera.deviceId;
@@ -197,7 +199,20 @@ export default class SCameraUIController {
   }
 
   createFlashBtn() {
+    let container;
+
+    if (this.isMobile) {
+      container = document.querySelector(".mobile-actions-container");
+    }
+
+    const flashCap = SCamera.captureController.capabilities?.torch;
+    if (!flashCap) {
+      console.warn('Flash não suportado.');
+      return;
+    }
+
     const flashBtn = document.createElement('button');
+    flashBtn.className += ' mobile-flash';
     const svgEnabled = `
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icons-actions-container"><title>flash</title>
         <path d="M7,2V13H10V22L17,10H13L17,2H7Z" />
@@ -225,7 +240,9 @@ export default class SCameraUIController {
       }
     });
     
-    return flashBtn;
+    if (container) {
+      container.appendChild(flashBtn);
+    }
   }
 
   async createZoomControl() {
@@ -323,7 +340,7 @@ export default class SCameraUIController {
         visualIndicator.style.left = `${percent * 100}%`;
 
         containerSliderTrack.style.display = 'none';
-        zoomOptions.style.marginBottom = '180px';
+        zoomOptions.style.marginBottom = '160px';
 
         document.querySelectorAll('.zoom-value-label').forEach(el => el.classList.remove('active'));
         label.classList.add('active');
@@ -442,7 +459,7 @@ export default class SCameraUIController {
     document.addEventListener('click', (e) => {
       if (!zoomControl.contains(e.target)) {
         containerSliderTrack.style.display = 'none';
-        zoomOptions.style.marginBottom = '180px';
+        zoomOptions.style.marginBottom = '160px';
 
         zoomOptionsContainer.innerHTML = '';
         zoomSteps.forEach(val => {

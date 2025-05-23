@@ -24,6 +24,7 @@ let SCamera = {
       SCamera.uiController.init();
       await SCamera.captureController.init();
       SCamera.uiController.createZoomControl();
+      SCamera.uiController.createFlashBtn();
       await SCamera.loadDevices();
     } catch (error) {
       console.error('Initialization error:', error);

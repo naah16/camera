@@ -84,7 +84,7 @@ body {
   justify-content: center;
   align-items: center;
   gap: 10px;
-  margin-bottom: 180px;
+  margin-bottom: 160px;
 }
 
 .zoom-options-container {
@@ -107,11 +107,12 @@ body {
 }
 
 .zoom-value-label {
+  user-select: none;
   color: #fff;
-  font-weight: semi-bold;
-  font-size: 14px;
-  padding: 7px;
-  border-radius: 90px;
+  font-weight: bold;
+  font-size: 12px;
+  padding: 9px;
+  border-radius: 50%;
 }
 
 .zoom-value-label.active {
@@ -183,8 +184,9 @@ body {
 
 /* Shutter Button */
 .shutter-btn {
-  width: 90px;
-  height: 90px;
+  user-select: none;
+  width: 70px;
+  height: 70px;
   border-radius: 90px;
   background-color: #fff;
   border: none;
@@ -232,6 +234,7 @@ body {
 }
 
 .mobile-switch, .mobile-flash, .leave-camera-btn {
+  user-select: none;
   width: 45px;
   height: 45px;
   border-radius: 50%;
@@ -372,8 +375,7 @@ body {
 .photo-action-btn {
   flex: 1;
   padding: 20px;
-  background: #333;
-  border: 1px solid rgba(0, 0, 0, 0.5);
+  border: none;
   color: white;
   display: flex;
   justify-content: center;
@@ -381,9 +383,18 @@ body {
   cursor: pointer;
 }
 
+.photo-action-btn.download-btn {
+  background: #2f8ee5;
+}
+
+.photo-action-btn.close-btn {
+  background: rgba(0, 0, 0, 0.5);
+}
+
 .leave-camera-btn {
   cursor: pointer;
-  left: 20px;
+  user-select: none;
+  right: 20px;
   position: absolute;
   top: 20px;
 }
