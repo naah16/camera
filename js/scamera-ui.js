@@ -273,6 +273,7 @@ export default class SCameraUIController {
 
     await SCamera.captureController.waitForCapabilities?.();
     const zoomCap = SCamera.captureController.capabilities.zoom;
+    console.log('Zoom capabilities foi carregado');
     const isFrontal = SCamera.currentConfig.facingMode === 'user';
 
     if (isFrontal) {
