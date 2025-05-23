@@ -177,6 +177,11 @@ body {
   /* background-color: rgba(255, 0, 0, 0.2); */
 }
 
+.icons-photo-actions {
+  width: 16px;
+  fill: white;
+}
+
 .icons-actions-container {
   width: 20px;
   fill: white;
@@ -379,10 +384,12 @@ body {
 }
 
 .photo-action-btn {
-  flex: 1;
-  padding: 20px;
   border: none;
+  width: 100px;
+  height: 50px;
+  border-radius: 50px;
   color: white;
+  font-weight: bold;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -394,7 +401,7 @@ body {
 }
 
 .photo-action-btn.close-btn {
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.8);
 }
 
 .leave-camera-btn {

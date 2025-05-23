@@ -526,12 +526,20 @@ export default class SCameraUIController {
     
     const closeBtn = document.createElement('button');
     closeBtn.className = 'photo-action-btn close-btn';
-    closeBtn.innerHTML = 'Repetir';
+    closeBtn.innerHTML = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icons-photo-actions"><title>close</title>
+      <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
+    </svg>
+    Cancelar`;
     closeBtn.addEventListener('click', () => this.hidePhotoPreview());
 
     const downloadBtn = document.createElement('button');
     downloadBtn.className = 'photo-action-btn download-btn';
-    downloadBtn.innerHTML = 'Usar foto';
+    downloadBtn.innerHTML = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icons-photo-actions"><title>send</title>
+      <path d="M2,21L23,12L2,3V10L17,12L2,14V21Z" />
+    </svg>
+    Confirmar`;
     downloadBtn.addEventListener('click', () => SCamera.sendBlob());
     
     actions.appendChild(closeBtn);
