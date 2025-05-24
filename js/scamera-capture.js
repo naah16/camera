@@ -178,7 +178,7 @@ export default class SCameraCaptureController {
 
       // Função utilitária para desenhar com rotação
       function drawRotatedImage(ctx, image, rotation, facingMode) {
-        const angle = rotation * Math.PI / 180;
+        const angle = -rotation * Math.PI / 180;
 
         if (Math.abs(rotation) === 90) {
           ctx.canvas.width = image.height;
