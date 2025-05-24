@@ -174,40 +174,48 @@ export default class SCameraCaptureController {
   async capturePhoto() {
     try {
       let photoBlob;
-
-      const orientation = SCamera.uiController?.orientation || 'portrait';
       const rotation = SCamera.uiController?.rotation || 0;
-      const facingMode = this.settings.facingMode;
 
-      const applyCanvasTransform = (ctx, canvas, width, height, rotation, facingMode) => {
+      // Função utilitária para desenhar com rotação
+      function drawRotatedImage(ctx, image, rotation, facingMode) {
+        const angle = rotation * Math.PI / 180;
+
         if (Math.abs(rotation) === 90) {
-          canvas.width = height;
-          canvas.height = width;
+          ctx.canvas.width = image.height;
+          ctx.canvas.height = image.width;
         } else {
-          canvas.width = width;
-          canvas.height = height;
+          ctx.canvas.width = image.width;
+          ctx.canvas.height = image.height;
         }
 
-        ctx.translate(canvas.width / 2, canvas.height / 2);
-        ctx.rotate(rotation * Math.PI / 180);
+        ctx.save();
+        ctx.translate(ctx.canvas.width / 2, ctx.canvas.height / 2);
+        ctx.rotate(angle);
 
+        let scaleX = 1;
         if (facingMode === 'user') {
-          ctx.scale(-1, 1);
+          scaleX = -1;
         }
 
-        ctx.translate(-width / 2, -height / 2);
-      };
+        ctx.scale(scaleX, 1);
+        ctx.drawImage(
+          image,
+          -image.width / 2,
+          -image.height / 2,
+          image.width,
+          image.height
+        );
+        ctx.restore();
+      }
 
       // Tentar usar ImageCapture para melhor qualidade
       if (this.imageCapture) {
         try {
           const photoBitmap = await this.imageCapture.grabFrame();
-
           const canvas = document.createElement('canvas');
           const ctx = canvas.getContext('2d');
 
-          applyCanvasTransform(ctx, canvas, photoBitmap.width, photoBitmap.height, rotation, facingMode);
-          ctx.drawImage(photoBitmap, 0, 0);
+          drawRotatedImage(ctx, photoBitmap, rotation, this.settings.facingMode);
 
           photoBlob = await new Promise((resolve) => {
             canvas.toBlob(resolve, 'image/jpeg', 1);
@@ -225,8 +233,7 @@ export default class SCameraCaptureController {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
 
-        applyCanvasTransform(ctx, canvas, videoElement.videoWidth, videoElement.videoHeight, rotation, facingMode);
-        ctx.drawImage(videoElement, 0, 0, videoElement.videoWidth, videoElement.videoHeight);
+        drawRotatedImage(ctx, videoElement, rotation, this.settings.facingMode);
 
         photoBlob = await new Promise((resolve) => {
           canvas.toBlob(resolve, 'image/jpeg', 1);
