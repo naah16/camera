@@ -1,4 +1,4 @@
-import SCameraUIController from './scamera-ui.js?v=20250525v2';
+import SCameraUIController from './scamera-ui.js?v=20250525v3';
 import SCameraCaptureController from './scamera-capture.js?v=20250523v6';
 
 let SCamera = {

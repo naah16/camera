@@ -329,7 +329,7 @@ export default class SCameraUIController {
         e.stopPropagation();
         const clickedZoom = parseFloat(label.dataset.zoom);
 
-        if (lastClickedLabel === label && !isExpanded) {
+        if (lastClickedLabel === label && isExpanded) {
           containerSliderTrack.style.display = 'flex';
           zoomOptions.style.marginBottom = '15px';
 
