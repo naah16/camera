@@ -294,7 +294,7 @@ export default class SCameraUIController {
 
     this.zoomIndicator = visualIndicator;
     this.zoomTrack = sliderTrack;
-
+    
     const zoomCap = SCamera.captureController.capabilities?.zoom;
     const isFrontal = SCamera.currentConfig.facingMode === 'user';
 
@@ -332,12 +332,6 @@ export default class SCameraUIController {
         if (lastClickedLabel === label && isExpanded) {
           containerSliderTrack.style.display = 'flex';
           zoomOptions.style.marginBottom = '15px';
-
-          // Mostrar somente o label selecionado ao abrir o slider
-          zoomOptionsContainer.innerHTML = '';
-          zoomOptionsContainer.appendChild(label);
-
-          isExpanded = true;
           return;
         }
 
@@ -356,7 +350,7 @@ export default class SCameraUIController {
         label.classList.add('active');
 
         customZoomContainer.innerHTML = '';
-        sliderLabel = null;
+        sliderLabel = null; // <== CORREÇÃO
       });
 
       return label;
