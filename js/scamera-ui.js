@@ -655,10 +655,18 @@ export default class SCameraUIController {
     let orientation;
     
     if (x > 7) {
-      rotation = 90; // Landscape Left
+      if (navigator.userAgent.indexOf('Android') >= 0){
+        rotation = 90; // Landscape Left
+      } else {
+        rotation = -90; // Landscape Right
+      }
       orientation = 'landscape-left';
     } else if (x < -7) {
-      rotation = -90;  // Landscape Right
+      if (navigator.userAgent.indexOf('Android') >= 0){
+        rotation = -90;  // Landscape Right
+      } else {
+        rotation = 90; // Landscape Left
+      }
       orientation = 'landscape-right';
     } else {
       rotation = 0;   // Portrait
