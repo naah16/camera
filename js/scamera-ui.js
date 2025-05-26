@@ -294,7 +294,7 @@ export default class SCameraUIController {
 
     this.zoomIndicator = visualIndicator;
     this.zoomTrack = sliderTrack;
-    
+
     const zoomCap = SCamera.captureController.capabilities?.zoom;
     const isFrontal = SCamera.currentConfig.facingMode === 'user';
 
@@ -318,7 +318,6 @@ export default class SCameraUIController {
     let scrollTimeout;
 
     const formatZoom = (value) => `x${value % 1 === 0 ? value : value.toFixed(1).replace('.0', '')}`;
-    // const isPredefinedZoom = (val) => zoomSteps.includes(parseFloat(val));
 
     const createZoomLabel = (zoomValue) => {
       const label = document.createElement('div');
@@ -330,10 +329,15 @@ export default class SCameraUIController {
         e.stopPropagation();
         const clickedZoom = parseFloat(label.dataset.zoom);
 
-        // Caso o mesmo label tenha sido clicado e esteja expandido
-        if (lastClickedLabel === label && isExpanded) {
+        if (lastClickedLabel === label && !isExpanded) {
           containerSliderTrack.style.display = 'flex';
           zoomOptions.style.marginBottom = '15px';
+
+          // Mostrar somente o label selecionado ao abrir o slider
+          zoomOptionsContainer.innerHTML = '';
+          zoomOptionsContainer.appendChild(label);
+
+          isExpanded = true;
           return;
         }
 
@@ -345,15 +349,11 @@ export default class SCameraUIController {
         const percent = (clickedZoom - min) / (max - min);
         visualIndicator.style.left = `${percent * 100}%`;
 
-        // Oculta todas as opções, deixando apenas a atual visível enquanto o slider está ativo
-        zoomOptionsContainer.innerHTML = '';
-        zoomOptionsContainer.appendChild(label);
+        containerSliderTrack.style.display = 'none';
+        zoomOptions.style.marginBottom = '160px';
 
         document.querySelectorAll('.zoom-value-label').forEach(el => el.classList.remove('active'));
         label.classList.add('active');
-
-        containerSliderTrack.style.display = 'none';
-        zoomOptions.style.marginBottom = '160px';
 
         customZoomContainer.innerHTML = '';
         sliderLabel = null;
