@@ -639,11 +639,14 @@ export default class SCameraUIController {
 
   async setupOrientationListener() {
     let btn = document.createElement("button");
+    btn.style.display = "none"
     btn.addEventListener("click", () => {
       DeviceMotionEvent.requestPermission();
-    })
+    });
+    document.body.append(btn);
 
     btn.click();
+    btn.remove();
 
     if (window.DeviceMotionEvent && typeof DeviceMotionEvent.requestPermission === 'function') {
       try {
