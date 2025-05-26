@@ -51,7 +51,7 @@ export default class SCameraCaptureController {
       this.settings = this.videoTrack.getSettings();
       this.currentDeviceId = this.settings.deviceId;
 
-      console.log("Capacidades da câmera:", this.capabilities);
+      // console.log("Capacidades da câmera:", this.capabilities);
       
       // Inicializa ImageCapture se suportado
       if ('ImageCapture' in window) {
@@ -177,15 +177,15 @@ export default class SCameraCaptureController {
       const rotation = SCamera.uiController?.rotation || 0;
 
       // Função utilitária para desenhar com rotação
-      function drawRotatedImage(ctx, image, rotation, facingMode) {
+      function drawRotatedImage(ctx, image, rotation, facingMode, width, height) {
         const angle = -rotation * Math.PI / 180;
 
         if (Math.abs(rotation) === 90) {
-          ctx.canvas.width = image.height;
-          ctx.canvas.height = image.width;
+          ctx.canvas.width = height;
+          ctx.canvas.height = width;
         } else {
-          ctx.canvas.width = image.width;
-          ctx.canvas.height = image.height;
+          ctx.canvas.width = width;
+          ctx.canvas.height = height;
         }
 
         ctx.save();
@@ -200,10 +200,10 @@ export default class SCameraCaptureController {
         ctx.scale(scaleX, 1);
         ctx.drawImage(
           image,
-          -image.width / 2,
-          -image.height / 2,
-          image.width,
-          image.height
+          -width / 2,
+          -height / 2,
+          width,
+          height
         );
         ctx.restore();
       }
@@ -211,14 +211,16 @@ export default class SCameraCaptureController {
       // Tentar usar ImageCapture para melhor qualidade
       if (this.imageCapture) {
         try {
-          const photoBitmap = await this.imageCapture.grabFrame();
+          const photoBitmap = await this.imageCapture?.grabFrame();
+          
+          // Converter ImageBitmap para Blob
           const canvas = document.createElement('canvas');
           const ctx = canvas.getContext('2d');
 
-          drawRotatedImage(ctx, photoBitmap, rotation, this.settings.facingMode);
+          drawRotatedImage(ctx, photoBitmap, rotation, this.settings.facingMode, photoBitmap.width, photoBitmap.height);
 
           photoBlob = await new Promise((resolve) => {
-            canvas.toBlob(resolve, 'image/jpeg', 1);
+            canvas.toBlob((newBlob) => resolve(newBlob), 'image/jpeg', 1);
           });
         } catch (error) {
           console.warn('ImageCapture failed, falling back to canvas:', error);
@@ -233,10 +235,12 @@ export default class SCameraCaptureController {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
 
-        drawRotatedImage(ctx, videoElement, rotation, this.settings.facingMode);
+        drawRotatedImage(ctx, videoElement, rotation, this.settings.facingMode, videoElement.videoWidth, videoElement.videoHeight);
 
         photoBlob = await new Promise((resolve) => {
-          canvas.toBlob(resolve, 'image/jpeg', 1);
+          canvas.toBlob((newBlob) => {
+            resolve(newBlob);
+          }, 'image/jpeg', 1);
         });
       }
 

@@ -2,6 +2,14 @@ body {
   font-family: "Open Sans", "Helvetica Neue", sans-serif;
 }
 
+video {
+  pointer-events: none;
+}
+
+video::-webkit-media-controls-panel {
+  display: none !important;
+}
+
 .camera-container * {
   -webkit-tap-highlight-color: transparent;
 }
@@ -117,6 +125,7 @@ body {
   font-size: 12px;
   padding: 9px;
   border-radius: 50%;
+  -webkit-user-select: none;
 }
 
 .zoom-value-label.active {
@@ -204,6 +213,7 @@ body {
     inset 0 0 5px rgba(255, 255, 255, 0.5);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   position: relative;
+  -webkit-user-select: none;
 }
 
 .shutter-btn:active {
@@ -232,6 +242,7 @@ body {
   flex-direction: column;
   gap: 6px;
   user-select: none;
+  -webkit-user-select: none;
 }
 
 .mobile-actions-container {
@@ -246,6 +257,7 @@ body {
   user-select: none;
   width: 45px;
   height: 45px;
+  -webkit-user-select: none;
 }
 
 .mobile-switch, .mobile-flash, .leave-camera-btn {
@@ -260,6 +272,7 @@ body {
   align-items: center;
   border: none;
   transition: transform 0.2s ease;
+  -webkit-user-select: none;
 }
 
 .mobile-switch:active, .mobile-flash:active, .leave-camera-btn:active {
@@ -276,6 +289,7 @@ body {
   flex-direction: column;
   align-items: center;
   user-select: none;
+  -webkit-user-select: none;
 }
 
 .mobile-zoom input[type="range"] {
@@ -418,6 +432,7 @@ body {
   right: 20px;
   position: absolute;
   top: 20px;
+  -webkit-user-select: none;
 }
 
 .leave-camera-btn:hover {

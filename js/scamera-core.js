@@ -1,5 +1,5 @@
-import SCameraUIController from './scamera-ui.js?v=20250525v3';
-import SCameraCaptureController from './scamera-capture.js?v=20250523v6';
+import SCameraUIController from './scamera-ui.js?v=20250526';
+import SCameraCaptureController from './scamera-capture.js?v=20250526';
 
 let SCamera = {
   uiController: null,
@@ -36,7 +36,7 @@ let SCamera = {
     await SCamera.listCameras();
     const devices = await navigator.mediaDevices.enumerateDevices();
     SCamera.devices.cameras = devices.filter(device => device.kind === 'videoinput');
-    console.log('Cameras:', SCamera.devices.cameras);
+    // console.log('Cameras:', SCamera.devices.cameras);
     
     if (SCamera.captureController.currentStream) {
       await SCamera.loadSupportedResolutions();

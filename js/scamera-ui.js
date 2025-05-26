@@ -27,6 +27,7 @@ export default class SCameraUIController {
     videoElement.className = 'camera-preview';
     videoElement.autoplay = true;
     videoElement.playsInline = true;
+    videoElement.muted = true; 
 
     if (SCamera.currentConfig.facingMode == "user") {
       videoElement.style.transform = 'scaleX(-1)';
@@ -663,7 +664,7 @@ export default class SCameraUIController {
       rotation = 0;   // Portrait
       orientation = 'portrait';
     }
-    console.log('orientação: ', orientation);
+    // console.log('orientação: ', orientation);
 
     this.orientation = orientation;
     this.rotation = rotation;
