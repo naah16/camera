@@ -1,4 +1,4 @@
-import SCameraUIController from './scamera-ui.js?v=20250526v2';
+import SCameraUIController from './scamera-ui.js?v=20250526v3';
 import SCameraCaptureController from './scamera-capture.js?v=20250526';
 
 let SCamera = {
@@ -21,6 +21,7 @@ let SCamera = {
     SCamera.captureController = new SCameraCaptureController();
     
     try {
+      await SCamera.uiController.setupOrientationListener();
       SCamera.uiController.init();
       await SCamera.captureController.init();
       SCamera.uiController.createZoomControl();

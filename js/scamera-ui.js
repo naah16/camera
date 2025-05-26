@@ -8,7 +8,7 @@ export default class SCameraUIController {
 
   init() {
     this.createCameraPreview();
-    this.setupOrientationListener();
+    // this.setupOrientationListener();
   }
 
   createCameraPreview() {
@@ -637,13 +637,16 @@ export default class SCameraUIController {
     });
   }
 
-  setupOrientationListener() {
+  async setupOrientationListener() {
     if (window.DeviceMotionEvent && typeof DeviceMotionEvent.requestPermission === 'function') {
-      DeviceMotionEvent.requestPermission().then(response => {
+      try {
+        const response = await DeviceMotionEvent.requestPermission();
         if (response === 'granted') {
           window.addEventListener("devicemotion", this.handleOrientationChange.bind(this));
         }
-      }).catch(console.error);
+      } catch (error) {
+        console.error(error);
+      }
     } else {
       window.addEventListener("devicemotion", this.handleOrientationChange.bind(this));
     }
