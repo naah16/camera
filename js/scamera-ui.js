@@ -367,7 +367,7 @@ export default class SCameraUIController {
 
     const startScroll = () => {
       isDragging = true;
-      zoomOptionsContainer.style.display = 'none';
+      // zoomOptionsContainer.style.display = 'none';
       customZoomContainer.innerHTML = '';
       if (sliderLabel) customZoomContainer.appendChild(sliderLabel);
     };

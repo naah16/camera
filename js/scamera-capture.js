@@ -17,6 +17,24 @@ export default class SCameraCaptureController {
       video: true
     });
     await this.getCameraStream();
+    if (this.isMobile) {
+      this.onVisibilityChange();
+    }
+  }
+
+  onVisibilityChange() {
+    document.addEventListener('visibilitychange', async () => {
+      if (document.visibilityState === 'visible') {
+        try {
+          await this.getCameraStream();
+        } catch (error) {
+          console.error('Erro ao tentar reiniciar a câmera após retornar ao app:', error);
+          SCamera.uiController?.showCameraError('Erro ao tentar reiniciar a câmera');
+        }
+      } else if (document.visibilityState === 'hidden') {
+        this.stopCurrentStream(); // Libera a câmera ao sair
+      }
+    });
   }
 
   async getCameraStream(constraints = null) {
