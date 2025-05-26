@@ -14,13 +14,16 @@
 </head>
 
 <body>
-	<div onclick="initCamera();">Iniciar camera</div>
+	<div class="init-btn">Iniciar camera</div>
 	<script>
 		function initCamera(e){
 			e.srcElement.remove();
 			
 			SCamera.init()
 		}
+		document.addEventListener('DOMContentLoaded', () => {
+			document.querySelector('.init-btn').addEventListener('click', initCamera);
+		});
 	</script>
 </body>
 
