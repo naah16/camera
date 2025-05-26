@@ -70,13 +70,15 @@ export default class SCameraCaptureController {
         }
       }
       
-      const isPortrait = screen.availHeight > screen.availWidth;
-      // Atualiza configurações no SCamera
-      SCamera.currentConfig.deviceId = this.currentDeviceId;
-      SCamera.currentConfig.resolution = {
-        width: isPortrait ? this.settings.height : this.settings.width,
-        height: isPortrait ? this.settings.width : this.settings.height
-      };
+      if (navigator.userAgent.indexOf('Android') >= 0) {
+        const isPortrait = screen.availHeight > screen.availWidth;
+        // Atualiza configurações no SCamera
+        SCamera.currentConfig.deviceId = this.currentDeviceId;
+        SCamera.currentConfig.resolution = {
+          width: isPortrait ? this.settings.height : this.settings.width,
+          height: isPortrait ? this.settings.width : this.settings.height
+        };
+      }
       
       return stream;
     } catch (error) {
@@ -104,15 +106,22 @@ export default class SCameraCaptureController {
     
     const videoElement = document.querySelector('.camera-preview');
     const zoomElement = document.querySelector('.zoom-slider-container');
+    const flashBtn = document.querySelector('.flash-btn');
     if (SCamera.currentConfig.facingMode == "user") {
       videoElement.style.transform = 'scaleX(-1)';
       if (zoomElement) {
         zoomElement.style.display = 'none';
       }
+      if (flashBtn) {
+        flashBtn.style.display = 'none';
+      }
     } else {
       videoElement.style.transform = 'scaleX(1)';
       if (zoomElement) {
         zoomElement.style.display = 'flex';
+      }
+      if (flashBtn) {
+        flashBtn.style.display = 'flex';
       }
     }
 

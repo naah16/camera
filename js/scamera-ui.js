@@ -8,7 +8,6 @@ export default class SCameraUIController {
 
   init() {
     this.createCameraPreview();
-    // this.setupOrientationListener();
   }
 
   createCameraPreview() {
