@@ -638,17 +638,6 @@ export default class SCameraUIController {
   }
 
   async setupOrientationListener() {
-    let btn = document.createElement("button");
-    btn.style.display = "none"
-    btn.addEventListener("click", async () => {
-      console.log("Chamou requestPermission");
-      await DeviceMotionEvent.requestPermission();
-    });
-    document.body.append(btn);
-
-    btn.click();
-    btn.remove();
-
     if (window.DeviceMotionEvent && typeof DeviceMotionEvent.requestPermission === 'function') {
       try {
         const response = await DeviceMotionEvent.requestPermission();
