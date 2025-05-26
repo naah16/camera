@@ -17,9 +17,7 @@ export default class SCameraCaptureController {
       video: true
     });
     await this.getCameraStream();
-    if (this.isMobile) {
-      this.onVisibilityChange();
-    }
+    this.onVisibilityChange();
   }
 
   onVisibilityChange() {
