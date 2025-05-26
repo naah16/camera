@@ -345,14 +345,18 @@ export default class SCameraUIController {
         const percent = (clickedZoom - min) / (max - min);
         visualIndicator.style.left = `${percent * 100}%`;
 
-        containerSliderTrack.style.display = 'none';
-        zoomOptions.style.marginBottom = '160px';
+        // Oculta todas as opções, deixando apenas a atual visível enquanto o slider está ativo
+        zoomOptionsContainer.innerHTML = '';
+        zoomOptionsContainer.appendChild(label);
 
         document.querySelectorAll('.zoom-value-label').forEach(el => el.classList.remove('active'));
         label.classList.add('active');
 
-        // Oculta o valor customizado ao clicar em um zoom pré-definido
+        containerSliderTrack.style.display = 'none';
+        zoomOptions.style.marginBottom = '160px';
+
         customZoomContainer.innerHTML = '';
+        sliderLabel = null;
       });
 
       return label;
