@@ -26,7 +26,8 @@ export default class SCameraUIController {
     videoElement.className = 'camera-preview';
     videoElement.autoplay = true;
     videoElement.playsInline = true;
-    videoElement.muted = true; 
+    videoElement.muted = true;
+    videoElement.poster = "/resources/img/black-pixel.png";
 
     if (SCamera.currentConfig.facingMode == "user") {
       videoElement.style.transform = 'scaleX(-1)';
@@ -296,13 +297,14 @@ export default class SCameraUIController {
     this.zoomTrack = sliderTrack;
     
     const zoomCap = SCamera.captureController.capabilities?.zoom;
+    const isVirtualZoom = SCamera.captureController.isAndroidWebView;
     const isFrontal = SCamera.currentConfig.facingMode === 'user';
 
     if (isFrontal) {
       return;
     }
 
-    if (!zoomCap) {
+    if (!zoomCap && !isVirtualZoom) {
       console.warn('Zoom não suportado.');
       return;
     }
@@ -325,7 +327,7 @@ export default class SCameraUIController {
       label.textContent = formatZoom(zoomValue);
       label.dataset.zoom = zoomValue;
 
-      label.addEventListener('click', (e) => {
+      label.addEventListener('click', async (e) => {
         e.stopPropagation();
         const clickedZoom = parseFloat(label.dataset.zoom);
 
@@ -336,7 +338,7 @@ export default class SCameraUIController {
         }
 
         isExpanded = true;
-        SCamera.captureController.setZoom(clickedZoom);
+        await SCamera.captureController.setZoom(clickedZoom);
         currentZoom = clickedZoom;
         lastClickedLabel = label;
 
@@ -399,11 +401,11 @@ export default class SCameraUIController {
       zoomOptionsContainer.style.display = 'flex';
     };
 
-    const updateZoomFromPercent = (percent) => {
+    const updateZoomFromPercent = async (percent) => {
       const newZoom = min + (max - min) * percent;
       const clampedZoom = Math.round(newZoom * 10) / 10;
 
-      SCamera.captureController.setZoom(clampedZoom);
+      await SCamera.captureController.setZoom(clampedZoom);
       currentZoom = clampedZoom;
       visualIndicator.style.left = `${percent * 100}%`;
 

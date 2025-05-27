@@ -10,6 +10,7 @@ export default class SCameraCaptureController {
     this.torchEnabled = false;
     this.blob = null;
     this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    this.isAndroidWebView = navigator.userAgent.includes('Android') && window.navigator.standalone !== true;
   }
 
   async init() {
@@ -77,7 +78,7 @@ export default class SCameraCaptureController {
       const videoElement = document.querySelector('.camera-preview');
       if (videoElement) {
         videoElement.srcObject = stream;
-        videoElement.play();
+        await videoElement.play();
         
         if (this.settings.facingMode === 'user') {
           videoElement.style.transform = 'scaleX(-1)';
@@ -153,7 +154,7 @@ export default class SCameraCaptureController {
       
       // Reaplicar configurações após trocar a câmera
       if (this.capabilities?.zoom && SCamera.currentConfig.zoom > 1) {
-        this.setZoom(1);
+        await this.setZoom(1);
       }
       
       if (this.capabilities?.torch) {
@@ -295,24 +296,40 @@ export default class SCameraCaptureController {
     }));
   }
 
-  setZoom(zoomValue) {
-    if (!this.videoTrack || !this.capabilities?.zoom) {
-      console.log('Zoom not supported');
-      return this.currentZoom;
+  async setZoom(zoomLevel) {
+    this.currentZoom = zoomLevel;
+    const videoElement = document.querySelector('.camera-preview');
+
+    if (!videoElement) return;
+
+    // Tentar zoom óptico se suportado
+    if (this.capabilities?.zoom && !this.isAndroidWebView) {
+      try {
+        const track = this.currentStream?.getVideoTracks?.()[0];
+        await track.applyConstraints({ advanced: [{ zoom: zoomLevel }] });
+        return zoomLevel;
+      } catch (error) {
+        console.warn('Zoom óptico não pôde ser aplicado. Usando zoom virtual.', error);
+      }
     }
 
-    const clampedZoom = Math.min(Math.max(zoomValue, this.capabilities.zoom.min), this.capabilities.zoom.max);
-    this.currentZoom = clampedZoom;
+    // Zoom virtual para WebView Android
+    videoElement.style.transformOrigin = 'center center';
+    videoElement.style.transform = `scale(${zoomLevel})`;
 
-    return this.videoTrack.applyConstraints({
-      advanced: [{ zoom: clampedZoom }]
-    }).then(() => {
-      SCamera.currentConfig.zoom = clampedZoom;
-      return clampedZoom;
-    }).catch((error) => {
-      console.error('Error setting zoom:', error);
-      return this.currentZoom;
-    });
+    const container = videoElement.parentElement;
+    if (container) {
+      const zoomPercent = 1 / zoomLevel;
+      const left = (1 - zoomPercent) * 50;
+      container.style.overflow = 'hidden';
+      container.style.left = `${left}%`;
+      container.style.top = `0`;
+      container.style.width = `${zoomPercent * 100}%`;
+      container.style.height = `100%`;
+      container.style.position = 'absolute';
+    }
+
+    return zoomLevel;
   }
 
   toggleFlash(state) {
