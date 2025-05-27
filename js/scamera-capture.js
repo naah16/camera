@@ -10,7 +10,7 @@ export default class SCameraCaptureController {
     this.torchEnabled = false;
     this.blob = null;
     this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    this.isAndroidWebView = navigator.userAgent.includes('Android') && window.navigator.standalone !== true;
+    // this.isAndroidWebView = navigator.userAgent.includes('Android') && window.navigator.standalone !== true;
   }
 
   async init() {
@@ -201,7 +201,6 @@ export default class SCameraCaptureController {
     try {
       let photoBlob;
       const rotation = SCamera.uiController?.rotation || 0;
-      const zoom = this.currentZoom || 1;
 
       // Função utilitária para desenhar com rotação
       function drawRotatedImage(ctx, image, rotation, facingMode, width, height) {
@@ -246,14 +245,6 @@ export default class SCameraCaptureController {
 
           drawRotatedImage(ctx, photoBitmap, rotation, this.settings.facingMode, photoBitmap.width, photoBitmap.height);
 
-          if (this.isAndroidWebView && zoom !== 1) {
-            console.log("a");
-            this.applyVirtualZoomToCanvas(ctx, canvas, photoBitmap.width, photoBitmap.height, zoom);
-          } else {
-            console.log("b");
-            ctx.drawImage(photoBitmap, 0, 0);
-          }
-
           photoBlob = await new Promise((resolve) => {
             canvas.toBlob((newBlob) => resolve(newBlob), 'image/jpeg', 1);
           });
@@ -271,14 +262,6 @@ export default class SCameraCaptureController {
         const ctx = canvas.getContext('2d');
 
         drawRotatedImage(ctx, videoElement, rotation, this.settings.facingMode, videoElement.videoWidth, videoElement.videoHeight);
-
-        if (this.isAndroidWebView && zoom !== 1) {
-          console.log("aa");
-          this.applyVirtualZoomToCanvas(ctx, canvas, videoElement.videoWidth, videoElement.videoHeight, zoom);
-        } else {
-          console.log("ab");
-          ctx.drawImage(videoElement, 0, 0, videoElement.videoWidth, videoElement.videoHeight);
-        }
 
         photoBlob = await new Promise((resolve) => {
           canvas.toBlob((newBlob) => {
@@ -312,46 +295,66 @@ export default class SCameraCaptureController {
       composed: true
     }));
   }
+  
+  // Zoom virtual para WebView Android
+  // applyVirtualZoomToCanvas(ctx, canvas, width, height, zoomLevel) {
+  //   const scale = zoomLevel;
+  //   const scaledWidth = width / scale;
+  //   const scaledHeight = height / scale;
+  //   const offsetX = (width - scaledWidth) / 2;
+  //   const offsetY = (height - scaledHeight) / 2;
+  //   ctx.drawImage(canvas, offsetX, offsetY, scaledWidth, scaledHeight, 0, 0, width, height);
+  // }
+  // async setZoom(zoomLevel) {
+  //   this.currentZoom = zoomLevel;
+  //   const videoElement = document.querySelector('.camera-preview');
+  //   const container = document.querySelector('.viewfinder-container');
 
-  applyVirtualZoomToCanvas(ctx, canvas, width, height, zoomLevel) {
-    const scale = zoomLevel;
-    const scaledWidth = width / scale;
-    const scaledHeight = height / scale;
-    const offsetX = (width - scaledWidth) / 2;
-    const offsetY = (height - scaledHeight) / 2;
-    ctx.drawImage(canvas, offsetX, offsetY, scaledWidth, scaledHeight, 0, 0, width, height);
-  }
+  //   if (!videoElement) return;
 
-  async setZoom(zoomLevel) {
-    this.currentZoom = zoomLevel;
-    const videoElement = document.querySelector('.camera-preview');
-    const container = document.querySelector('.viewfinder-container');
+  //   // Tentar zoom óptico se suportado
+  //   if (this.capabilities?.zoom && !this.isAndroidWebView) {
+  //     try {
+  //       const track = this.currentStream?.getVideoTracks?.()[0];
+  //       await track.applyConstraints({ advanced: [{ zoom: zoomLevel }] });
+  //       return zoomLevel;
+  //     } catch (error) {
+  //       console.warn('Zoom óptico não pôde ser aplicado. Usando zoom virtual.', error);
+  //     }
+  //   }
 
-    if (!videoElement) return;
+  //   // Zoom virtual para WebView Android
+  //   videoElement.style.transformOrigin = 'center center';
+  //   videoElement.style.transform = `scale(${zoomLevel})`;
 
-    // Tentar zoom óptico se suportado
-    if (this.capabilities?.zoom && !this.isAndroidWebView) {
-      try {
-        const track = this.currentStream?.getVideoTracks?.()[0];
-        await track.applyConstraints({ advanced: [{ zoom: zoomLevel }] });
-        return zoomLevel;
-      } catch (error) {
-        console.warn('Zoom óptico não pôde ser aplicado. Usando zoom virtual.', error);
-      }
+  //   if (container) {
+  //     container.style.overflow = 'hidden';
+  //     container.style.position = 'relative';
+  //     container.style.width = '100vw';
+  //     container.style.height = '100vh';
+  //   }
+
+  //   return zoomLevel;
+  // }
+
+  async setZoom(zoomValue) {
+    if (!this.videoTrack || !this.capabilities?.zoom) {
+      console.log('Zoom not supported');
+      return this.currentZoom;
     }
 
-    // Zoom virtual para WebView Android
-    videoElement.style.transformOrigin = 'center center';
-    videoElement.style.transform = `scale(${zoomLevel})`;
+    const clampedZoom = Math.min(Math.max(zoomValue, this.capabilities.zoom.min), this.capabilities.zoom.max);
+    this.currentZoom = clampedZoom;
 
-    if (container) {
-      container.style.overflow = 'hidden';
-      container.style.position = 'relative';
-      container.style.width = '100vw';
-      container.style.height = '100vh';
-    }
-
-    return zoomLevel;
+    return this.videoTrack.applyConstraints({
+      advanced: [{ zoom: clampedZoom }]
+    }).then(() => {
+      SCamera.currentConfig.zoom = clampedZoom;
+      return clampedZoom;
+    }).catch((error) => {
+      console.error('Error setting zoom:', error);
+      return this.currentZoom;
+    });
   }
 
   toggleFlash(state) {

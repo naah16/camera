@@ -297,28 +297,34 @@ export default class SCameraUIController {
     this.zoomTrack = sliderTrack;
     
     const zoomCap = SCamera.captureController.capabilities?.zoom;
-    const isVirtualZoom = SCamera.captureController.isAndroidWebView;
+    // const isVirtualZoom = SCamera.captureController.isAndroidWebView;
     const isFrontal = SCamera.currentConfig.facingMode === 'user';
 
     if (isFrontal) {
       return;
     }
 
-    if (!zoomCap && !isVirtualZoom) {
+    if (!zoomCap) {
       console.warn('Zoom não suportado.');
       return;
     }
 
-    let min, max;
-    if (zoomCap) {
-      min = zoomCap.min;
-      max = zoomCap.max;
-    } else {
-      // WebView Android - zoom virtual
-      min = 1;
-      max = 4;
-    }
+    // if (!zoomCap && !isVirtualZoom) {
+    //   console.warn('Zoom não suportado.');
+    //   return;
+    // }
 
+    // let min, max;
+    // if (zoomCap) {
+    //   min = zoomCap.min;
+    //   max = zoomCap.max;
+    // } else {
+    //   // WebView Android - zoom virtual
+    //   min = 1;
+    //   max = 4;
+    // }
+
+    const { min, max } = zoomCap;
     const zoomSteps = [1, 2, 3, max];
     let currentZoom = 1;
     let lastClickedLabel = null;
