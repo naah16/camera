@@ -201,6 +201,7 @@ export default class SCameraCaptureController {
     try {
       let photoBlob;
       const rotation = SCamera.uiController?.rotation || 0;
+      const zoom = this.currentZoom || 1;
 
       // Função utilitária para desenhar com rotação
       function drawRotatedImage(ctx, image, rotation, facingMode, width, height) {
@@ -245,6 +246,17 @@ export default class SCameraCaptureController {
 
           drawRotatedImage(ctx, photoBitmap, rotation, this.settings.facingMode, photoBitmap.width, photoBitmap.height);
 
+          if (this.isAndroidWebView && zoom !== 1) {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = photoBitmap.width;
+            tempCanvas.height = photoBitmap.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(photoBitmap, 0, 0);
+            this.applyVirtualZoomToCanvas(ctx, tempCanvas, photoBitmap.width, photoBitmap.height, zoom);
+          } else {
+            ctx.drawImage(photoBitmap, 0, 0);
+          }
+
           photoBlob = await new Promise((resolve) => {
             canvas.toBlob((newBlob) => resolve(newBlob), 'image/jpeg', 1);
           });
@@ -262,6 +274,17 @@ export default class SCameraCaptureController {
         const ctx = canvas.getContext('2d');
 
         drawRotatedImage(ctx, videoElement, rotation, this.settings.facingMode, videoElement.videoWidth, videoElement.videoHeight);
+
+        if (this.isAndroidWebView && zoom !== 1) {
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = videoElement.videoWidth;
+          tempCanvas.height = videoElement.videoHeight;
+          const tempCtx = tempCanvas.getContext('2d');
+          tempCtx.drawImage(videoElement, 0, 0);
+          this.applyVirtualZoomToCanvas(ctx, tempCanvas, videoElement.videoWidth, videoElement.videoHeight, zoom);
+        } else {
+          ctx.drawImage(videoElement, 0, 0, videoElement.videoWidth, videoElement.videoHeight);
+        }
 
         photoBlob = await new Promise((resolve) => {
           canvas.toBlob((newBlob) => {
@@ -296,9 +319,19 @@ export default class SCameraCaptureController {
     }));
   }
 
+  applyVirtualZoomToCanvas(ctx, canvas, width, height, zoomLevel) {
+    const scale = zoomLevel;
+    const scaledWidth = width / scale;
+    const scaledHeight = height / scale;
+    const offsetX = (width - scaledWidth) / 2;
+    const offsetY = (height - scaledHeight) / 2;
+    ctx.drawImage(canvas, offsetX, offsetY, scaledWidth, scaledHeight, 0, 0, width, height);
+  }
+
   async setZoom(zoomLevel) {
     this.currentZoom = zoomLevel;
     const videoElement = document.querySelector('.camera-preview');
+    const container = document.querySelector('.viewfinder-container');
 
     if (!videoElement) return;
 
@@ -317,16 +350,11 @@ export default class SCameraCaptureController {
     videoElement.style.transformOrigin = 'center center';
     videoElement.style.transform = `scale(${zoomLevel})`;
 
-    const container = videoElement.parentElement;
     if (container) {
-      const zoomPercent = 1 / zoomLevel;
-      const left = (1 - zoomPercent) * 50;
       container.style.overflow = 'hidden';
-      container.style.left = `${left}%`;
-      container.style.top = `0`;
-      container.style.width = `${zoomPercent * 100}%`;
-      container.style.height = `100%`;
-      container.style.position = 'absolute';
+      container.style.position = 'relative';
+      container.style.width = '100vw';
+      container.style.height = '100vh';
     }
 
     return zoomLevel;
