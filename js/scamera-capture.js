@@ -120,7 +120,7 @@ export default class SCameraCaptureController {
     );
 
     SCamera.currentConfig.facingMode = SCamera.currentConfig.facingMode == "user" ? "environment" : "user";
-    
+
     const videoElement = document.querySelector('.camera-preview');
     const zoomElement = document.querySelector('.zoom-slider-container');
     const flashBtn = document.querySelector('.flash-btn');
@@ -156,9 +156,17 @@ export default class SCameraCaptureController {
       if (this.capabilities?.zoom && SCamera.currentConfig.zoom > 1) {
         await this.setZoom(1);
         SCamera.currentConfig.zoom = 1;
-        SCamera.uiController?.resetZoomUI();
       }
-      
+
+      // Resetar UI do zoom para x1
+      const zoomLabels = document.querySelectorAll('.zoom-value-label');
+      zoomLabels.forEach(label => label.classList.remove('active'));
+      const defaultLabel = Array.from(zoomLabels).find(label => label.dataset.zoom === '1');
+      if (defaultLabel) defaultLabel.classList.add('active');
+
+      const customZoomContainer = document.querySelector('.custom-zoom-container');
+      if (customZoomContainer) customZoomContainer.innerHTML = '';
+
       if (this.capabilities?.torch) {
         this.toggleFlash(SCamera.currentConfig.flash);
       }

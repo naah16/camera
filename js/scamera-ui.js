@@ -506,23 +506,6 @@ export default class SCameraUIController {
     }
   }
 
-  resetZoomUI() {
-    if (!this.zoomIndicator) return;
-
-    this.zoomIndicator.style.left = '0%';
-
-    document.querySelectorAll('.zoom-value-label').forEach(el => el.classList.remove('active'));
-
-    const labelX1 = document.querySelector('.zoom-value-label[data-zoom="1"]');
-    if (labelX1) {
-      labelX1.classList.add('active');
-      this.lastClickedLabel = labelX1;
-    }
-
-    const sliderContainer = document.querySelector('.zoom-slider-track-container');
-    if (sliderContainer) sliderContainer.style.display = 'none';
-  }
-
   showPhotoPreview(photoBlob) {
     // esconder visualização da câmera
     const viewfinder = document.querySelector('.viewfinder-container');
