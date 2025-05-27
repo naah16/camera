@@ -251,8 +251,7 @@ export default class SCameraCaptureController {
             tempCanvas.width = photoBitmap.width;
             tempCanvas.height = photoBitmap.height;
             const tempCtx = tempCanvas.getContext('2d');
-            tempCtx.drawImage(photoBitmap, 0, 0);
-            this.applyVirtualZoomToCanvas(ctx, tempCanvas, photoBitmap.width, photoBitmap.height, zoom);
+            this.applyVirtualZoomToCanvas(tempCtx, tempCanvas, photoBitmap.width, photoBitmap.height, zoom);
           } else {
             ctx.drawImage(photoBitmap, 0, 0);
           }
@@ -280,8 +279,7 @@ export default class SCameraCaptureController {
           tempCanvas.width = videoElement.videoWidth;
           tempCanvas.height = videoElement.videoHeight;
           const tempCtx = tempCanvas.getContext('2d');
-          tempCtx.drawImage(videoElement, 0, 0);
-          this.applyVirtualZoomToCanvas(ctx, tempCanvas, videoElement.videoWidth, videoElement.videoHeight, zoom);
+          this.applyVirtualZoomToCanvas(tempCtx, tempCanvas, videoElement.videoWidth, videoElement.videoHeight, zoom);
         } else {
           ctx.drawImage(videoElement, 0, 0, videoElement.videoWidth, videoElement.videoHeight);
         }
