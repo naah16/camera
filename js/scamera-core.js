@@ -1,5 +1,5 @@
-import SCameraUIController from './scamera-ui.js?v=20250527c';
-import SCameraCaptureController from './scamera-capture.js?v=20250527e';
+import SCameraUIController from './scamera-ui.js?v=20250527d';
+import SCameraCaptureController from './scamera-capture.js?v=20250527f';
 
 let SCamera = {
   uiController: null,
@@ -109,6 +109,7 @@ let SCamera = {
   closeCamera: () => {
     const existingContainer = document.querySelector('.camera-container');
     if (existingContainer) {
+      SCamera.uiController.removeOrientationListener();
       SCamera.captureController.stopCurrentStream();
       existingContainer.remove();
     }

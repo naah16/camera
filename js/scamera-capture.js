@@ -153,27 +153,40 @@ export default class SCameraCaptureController {
       });
       
       // Reaplicar configurações após trocar a câmera
-      if (this.capabilities?.zoom && SCamera.currentConfig.zoom > 1) {
-        await this.setZoom(1);
-        SCamera.currentConfig.zoom = 1;
-      }
-
-      // Resetar UI do zoom para x1
-      const zoomLabels = document.querySelectorAll('.zoom-value-label');
-      zoomLabels.forEach(label => label.classList.remove('active'));
-      const defaultLabel = Array.from(zoomLabels).find(label => label.dataset.zoom === '1');
-      if (defaultLabel) defaultLabel.classList.add('active');
-
-      const customZoomContainer = document.querySelector('.custom-zoom-container');
-      if (customZoomContainer) customZoomContainer.innerHTML = '';
-
-      if (this.capabilities?.torch) {
-        this.toggleFlash(SCamera.currentConfig.flash);
-      }
+      await this.resetZoom();
+      this.resetFlash();
     } catch (error) {
       console.error('Error switching camera:', error);
       throw error;
     }
+  }
+
+  async resetZoom() {
+    await this.setZoom(1);
+    SCamera.currentConfig.zoom = 1;
+
+    const zoomLabels = document.querySelectorAll('.zoom-value-label');
+    const defaultLabel = Array.from(zoomLabels).find(label => label.dataset.zoom === '1');
+    const customZoomContainer = document.querySelector('.custom-zoom-container');
+
+    zoomLabels.forEach(label => label.classList.remove('active'));
+    if (defaultLabel) defaultLabel.classList.add('active');
+    if (customZoomContainer) customZoomContainer.innerHTML = '';
+  }
+
+  resetFlash() {
+    const flashBtn = document.querySelector('.flash-btn');
+    const torchDisabled = `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icons-actions-container"><title>flash-off</title>
+        <path d="M17,10H13L17,2H7V4.18L15.46,12.64M3.27,3L2,4.27L7,9.27V13H10V22L13.58,15.86L17.73,20L19,18.73L3.27,3Z" />
+      </svg>
+    `;
+
+    if (flashBtn) {
+      flashBtn.innerHTML = torchDisabled;
+    }
+    this.toggleFlash(false);
+    this.torchEnabled = false;
   }
 
   async switchDesktopCamera() {
@@ -214,19 +227,25 @@ export default class SCameraCaptureController {
 
       // Função utilitária para desenhar com rotação
       function drawRotatedImage(ctx, image, rotation, facingMode, width, height) {
-        const angle = -rotation * Math.PI / 180;
+        let isLandscape = SCamera.uiController?._autoRotate;
 
-        if (Math.abs(rotation) === 90) {
+        ctx.save();
+
+        if (!isLandscape && Math.abs(rotation) === 90) {
           ctx.canvas.width = height;
           ctx.canvas.height = width;
         } else {
           ctx.canvas.width = width;
           ctx.canvas.height = height;
         }
-
-        ctx.save();
+        
         ctx.translate(ctx.canvas.width / 2, ctx.canvas.height / 2);
-        ctx.rotate(angle);
+
+        if(!isLandscape){
+          const angle = -rotation * Math.PI / 180;
+
+          ctx.rotate(angle);
+        }
 
         let scaleX = 1;
         if (facingMode === 'user') {

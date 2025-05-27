@@ -6,6 +6,7 @@ export default class SCameraUIController {
     this.rotation = 0;
     this.zoomIndicator = null;
     this.zoomTrack = null;
+    this._autoRotate = this.isMobile && screen.availHeight < screen.availWidth;
   }
 
   init() {
@@ -368,7 +369,9 @@ export default class SCameraUIController {
         document.querySelectorAll('.zoom-value-label').forEach(el => el.classList.remove('active'));
         label.classList.add('active');
 
-        customZoomContainer.innerHTML = '';
+        if (e.target.parentElement != customZoomContainer) {
+          customZoomContainer.firstElementChild?.remove();
+        }
         sliderLabel = null; // <== CORREÇÃO
       });
 
@@ -494,9 +497,6 @@ export default class SCameraUIController {
         if (sliderLabel) {
           customZoomContainer.appendChild(sliderLabel);
         }
-
-        document.querySelectorAll('.zoom-value-label').forEach(el => el.classList.remove('active'));
-        lastClickedLabel.classList.add('active');
         isExpanded = false;
       }
     });
@@ -650,25 +650,31 @@ export default class SCameraUIController {
   }
 
   async setupOrientationListener() {
-    if (window.DeviceMotionEvent && typeof DeviceMotionEvent.requestPermission === 'function') {
+    this._eventListener = this.handleMotionChange.bind(this);
+    if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
       try {
-        const response = await DeviceMotionEvent.requestPermission();
+        const response = await DeviceOrientationEvent.requestPermission();
         if (response === 'granted') {
-          window.addEventListener("devicemotion", this.handleOrientationChange.bind(this));
+          window.addEventListener("devicemotion", this._eventListener);
         }
       } catch (error) {
         console.error(error);
       }
     } else {
-      window.addEventListener("devicemotion", this.handleOrientationChange.bind(this));
+      window.addEventListener("devicemotion", this._eventListener);
     }
   }
+  
+  removeOrientationListener() {
+    window.removeEventListener("devicemotion", this._eventListener);
+  }
 
-  handleOrientationChange(event) {
-    const x = event.accelerationIncludingGravity.x;
+  handleMotionChange(e) {
+    const x = e.accelerationIncludingGravity.x;
     let rotation = 0;
     let orientation;
     
+    this._autoRotate = this.isMobile && screen.availHeight < screen.availWidth;
     if (x > 7) {
       if (navigator.userAgent.indexOf('Android') >= 0){
         rotation = 90; // Landscape Left
@@ -687,7 +693,6 @@ export default class SCameraUIController {
       rotation = 0;   // Portrait
       orientation = 'portrait';
     }
-    // console.log('orientação: ', orientation);
 
     this.orientation = orientation;
     this.rotation = rotation;

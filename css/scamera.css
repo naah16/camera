@@ -1,7 +1,3 @@
-body {
-  font-family: "Open Sans", "Helvetica Neue", sans-serif;
-}
-
 video {
   pointer-events: none;
 }
@@ -552,4 +548,42 @@ video::-webkit-media-controls-panel {
   100% {
     transform: scale(1);
   }
+}
+
+/* estilos para rotate landscape */
+
+.mobile-controls.landscape {
+  left: auto;
+  height: '-webkit-fill-available';
+}
+
+.mobile-actions-container.landscape {
+  flex-direction: column-reverse;
+  height: 100%; 
+}
+
+.leave-camera-btn.landscape {
+  right: 0;
+  left: 20px;
+}
+
+.zoom-options.landscape {
+  margin-bottom: 0;
+  margin-right: 10px;
+  /* o margin rigth é necessário para quando o zoomSliderTrack for aberto (160px) */
+}
+
+.zoom-options-container.landscape {
+  flex-direction: column-reverse;
+  margin-bottom: 0;
+  margin-right: 10px;
+}
+
+.zoom-slider-container.landscape {
+  left: auto;
+  flex-direction: row;
+}
+
+.zoom-slider-track-container.landscape {
+  margin-top: 0;
 }
