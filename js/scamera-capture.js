@@ -247,12 +247,10 @@ export default class SCameraCaptureController {
           drawRotatedImage(ctx, photoBitmap, rotation, this.settings.facingMode, photoBitmap.width, photoBitmap.height);
 
           if (this.isAndroidWebView && zoom !== 1) {
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = photoBitmap.width;
-            tempCanvas.height = photoBitmap.height;
-            const tempCtx = tempCanvas.getContext('2d');
-            this.applyVirtualZoomToCanvas(tempCtx, tempCanvas, photoBitmap.width, photoBitmap.height, zoom);
+            console.log("a");
+            this.applyVirtualZoomToCanvas(ctx, canvas, photoBitmap.width, photoBitmap.height, zoom);
           } else {
+            console.log("b");
             ctx.drawImage(photoBitmap, 0, 0);
           }
 
@@ -275,12 +273,10 @@ export default class SCameraCaptureController {
         drawRotatedImage(ctx, videoElement, rotation, this.settings.facingMode, videoElement.videoWidth, videoElement.videoHeight);
 
         if (this.isAndroidWebView && zoom !== 1) {
-          const tempCanvas = document.createElement('canvas');
-          tempCanvas.width = videoElement.videoWidth;
-          tempCanvas.height = videoElement.videoHeight;
-          const tempCtx = tempCanvas.getContext('2d');
-          this.applyVirtualZoomToCanvas(tempCtx, tempCanvas, videoElement.videoWidth, videoElement.videoHeight, zoom);
+          console.log("aa");
+          this.applyVirtualZoomToCanvas(ctx, canvas, videoElement.videoWidth, videoElement.videoHeight, zoom);
         } else {
+          console.log("ab");
           ctx.drawImage(videoElement, 0, 0, videoElement.videoWidth, videoElement.videoHeight);
         }
 
