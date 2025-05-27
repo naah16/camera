@@ -4,6 +4,8 @@ export default class SCameraUIController {
     this.photoPreview = null;
     this.orientation = null;
     this.rotation = 0;
+    this.zoomIndicator = null;
+    this.zoomTrack = null;
   }
 
   init() {
@@ -502,6 +504,23 @@ export default class SCameraUIController {
     if (container) {
       container.appendChild(zoomControl);
     }
+  }
+
+  resetZoomUI() {
+    if (!this.zoomIndicator) return;
+
+    this.zoomIndicator.style.left = '0%';
+
+    document.querySelectorAll('.zoom-value-label').forEach(el => el.classList.remove('active'));
+
+    const labelX1 = document.querySelector('.zoom-value-label[data-zoom="1"]');
+    if (labelX1) {
+      labelX1.classList.add('active');
+      this.lastClickedLabel = labelX1;
+    }
+
+    const sliderContainer = document.querySelector('.zoom-slider-track-container');
+    if (sliderContainer) sliderContainer.style.display = 'none';
   }
 
   showPhotoPreview(photoBlob) {

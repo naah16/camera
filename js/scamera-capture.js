@@ -155,6 +155,8 @@ export default class SCameraCaptureController {
       // Reaplicar configurações após trocar a câmera
       if (this.capabilities?.zoom && SCamera.currentConfig.zoom > 1) {
         await this.setZoom(1);
+        SCamera.currentConfig.zoom = 1;
+        SCamera.uiController?.resetZoomUI();
       }
       
       if (this.capabilities?.torch) {
