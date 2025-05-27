@@ -309,7 +309,16 @@ export default class SCameraUIController {
       return;
     }
 
-    const { min, max } = zoomCap;
+    let min, max;
+    if (zoomCap) {
+      min = zoomCap.min;
+      max = zoomCap.max;
+    } else {
+      // WebView Android - zoom virtual
+      min = 1;
+      max = 4;
+    }
+
     const zoomSteps = [1, 2, 3, max];
     let currentZoom = 1;
     let lastClickedLabel = null;
