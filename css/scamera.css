@@ -571,6 +571,8 @@ video::-webkit-media-controls-panel {
   left: auto;
   transform: translateX(0);
   width: auto;
+  height: 100%;
+  flex-direction: row;
 }
 
 .zoom-options.landscape {
@@ -590,7 +592,7 @@ video::-webkit-media-controls-panel {
 
 .zoom-slider-track-container.landscape {
   width: auto;
-  padding: 0px 176px 0 0px;
+  padding: 0px 176px 0 10px;
   margin-top: 0;
   height: 100%;
 }
