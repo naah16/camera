@@ -364,7 +364,14 @@ export default class SCameraUIController {
         visualIndicator.style.left = `${percent * 100}%`;
 
         containerSliderTrack.style.display = 'none';
-        zoomOptions.style.marginBottom = '160px';
+        //teste landscape aqui
+        if (this._autoRotate) {
+          zoomOptions.classList.add('landscape');
+          zoomOptions.style.marginBottom = '0px';
+        } else {
+          zoomOptions.classList.remove('landscape');
+          zoomOptions.style.marginBottom = '160px';
+        }
 
         document.querySelectorAll('.zoom-value-label').forEach(el => el.classList.remove('active'));
         label.classList.add('active');
@@ -485,7 +492,14 @@ export default class SCameraUIController {
     document.addEventListener('click', (e) => {
       if (!zoomControl.contains(e.target)) {
         containerSliderTrack.style.display = 'none';
-        zoomOptions.style.marginBottom = '160px';
+        //teste landscape aqui
+        if (this._autoRotate) {
+          zoomOptions.classList.add('landscape');
+          zoomOptions.style.marginBottom = '0px';
+        } else {
+          zoomOptions.classList.remove('landscape');
+          zoomOptions.style.marginBottom = '160px';
+        }
 
         zoomOptionsContainer.innerHTML = '';
         zoomSteps.forEach(val => {
@@ -702,9 +716,40 @@ export default class SCameraUIController {
   rotateIcons(degrees) {
     const icons = document.querySelectorAll('.mobile-switch, .mobile-flash, .zoom-value-label, .leave-camera-btn');
 
-    icons.forEach(icon => {
-      icon.style.transition = 'transform 0.3s ease';
-      icon.style.transform = `rotate(${degrees}deg)`;
-    });
+    const mobileControls = document.querySelector('.mobile-controls');
+    const mobileActions = document.querySelector('.mobile-actions-container');
+    const leaveCameraBtn = document.querySelector('.leave-camera-btn');
+    const zoomOptions = document.querySelector('.zoom-options');
+    const zoomOptionsContainer = document.querySelector('.zoom-options-container');
+    const zoomSliderContainer = document.querySelector('.zoom-slider-container');
+    const zoomSliderTrack = document.querySelector('.zoom-slider-track-container');
+
+    if (this._autoRotate === true) {
+      mobileControls.classList.add('landscape');
+      mobileActions.classList.add('landscape');
+      leaveCameraBtn.classList.add('landscape');
+      zoomOptions.classList.add('landscape');
+      //o margin rigth é necessário para quando o zoomSliderTrack for aberto (160px)
+      zoomOptionsContainer.classList.add('landscape');
+      zoomSliderContainer.classList.add('landscape');
+      zoomSliderTrack.classList.add('landscape');
+
+      icons.forEach(icon => {
+        icon.style.transition = 'none';
+        icon.style.transform = `rotate(0deg)`;
+      });
+    } else {
+      mobileControls.classList.remove('landscape');
+      mobileActions.classList.remove('landscape');
+      leaveCameraBtn.classList.remove('landscape');
+      zoomOptions.classList.remove('landscape');
+      zoomOptionsContainer.classList.remove('landscape');
+      zoomSliderContainer.classList.remove('landscape');
+      zoomSliderTrack.classList.remove('landscape');
+      icons.forEach(icon => {
+        icon.style.transition = 'transform 0.3s ease';
+        icon.style.transform = `rotate(${degrees}deg)`;
+      });
+    }
   }
 }
