@@ -84,7 +84,7 @@ video::-webkit-media-controls-panel {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 100%
+  width: 100%;
 }
 
 .zoom-options {
@@ -567,13 +567,19 @@ video::-webkit-media-controls-panel {
   left: 20px;
 }
 
+.zoom-slider-container.landscape {
+  left: auto;
+  transform: translateX(0);
+  width: auto;
+}
+
 .zoom-options.landscape {
   position: relative;
   flex-direction: column-reverse;
   margin-bottom: 0;
   margin-right: 10px;
   z-index: 1001;
-  right: 50px;
+  right: 0;
   /* o margin rigth é necessário para quando o zoomSliderTrack for aberto (160px) */
 }
 
@@ -582,19 +588,34 @@ video::-webkit-media-controls-panel {
   margin-bottom: 0;
 }
 
-.zoom-slider-container.landscape {
-  flex-direction: row;
+.zoom-slider-track-container.landscape {
+  width: auto;
+  padding: 0px 176px 0 0px;
+  margin-top: 0;
   height: 100%;
 }
 
-/* .zoom-slider-track-container.landscape {
-  position: absolute;
-  top: 50%;
-  right: 10px; /* distância da borda direita */
-  transform: translateY(-50%) rotate(-90deg);
-  transform-origin: center;
-  height: auto;
-  width: 60px; /* largura da barra após rotação */
-  display: flex;
-  justify-content: center;
-} */
+.zoom-slider-track.landscape {
+  width: 20px;
+  min-height: 90%;
+}
+
+.zoom-slider-track.landscape::before {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    white,
+    white 1px,
+    transparent 1px,
+    transparent 10px
+  );
+}
+
+.zoom-indicator.landscape {
+  width: 25px;
+  height: 2px;
+}
+
+.zoom-touch-area.landscape {
+  width: 40px;
+  height: 100%;
+}

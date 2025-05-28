@@ -287,33 +287,14 @@ export default class SCameraUIController {
     const touchArea = document.createElement('div');
     touchArea.className = 'zoom-touch-area';
 
-    //novo container para o slider vertical
-    const containerSliderTrackVertical = document.createElement('div');
-    containerSliderTrackVertical.className = 'zoom-slider-track-container vertical';
-    containerSliderTrackVertical.style.display = 'none';
-
-    const sliderTrackVertical = document.createElement('div');
-    sliderTrackVertical.className = 'zoom-slider-track';
-
-    const visualIndicatorVertical = document.createElement('div');
-    visualIndicatorVertical.className = 'zoom-indicator';
-
-    const touchAreaVertical = document.createElement('div');
-    touchAreaVertical.className = 'zoom-touch-area';
-
     sliderTrack.appendChild(visualIndicator);
     sliderTrack.appendChild(touchArea);
     containerSliderTrack.appendChild(sliderTrack);
-
-    sliderTrackVertical.appendChild(visualIndicatorVertical);
-    sliderTrackVertical.appendChild(touchAreaVertical);
-    containerSliderTrackVertical.appendChild(sliderTrackVertical);
 
     zoomOptions.appendChild(zoomOptionsContainer);
     zoomOptions.appendChild(customZoomContainer);
     zoomControl.appendChild(zoomOptions);
     zoomControl.appendChild(containerSliderTrack);
-    zoomControl.appendChild(containerSliderTrackVertical);
 
     this.zoomIndicator = visualIndicator;
     this.zoomTrack = sliderTrack;
@@ -355,6 +336,7 @@ export default class SCameraUIController {
     const predefinedLabels = {};
     let isDragging = false;
     let scrollTimeout;
+    const isVertical = containerSliderTrack.classList.contains('landscape');
 
     const formatZoom = (value) => `x${value % 1 === 0 ? value : value.toFixed(1).replace('.0', '')}`;
 
@@ -370,12 +352,10 @@ export default class SCameraUIController {
 
         if (lastClickedLabel === label && isExpanded) {
           if (this._autoRotate) {
-            containerSliderTrackVertical.style.display = 'flex';
             containerSliderTrack.style.display = 'none';
             zoomOptions.style.marginBottom = '0px';
             zoomOptions.style.right = '120px';
           } else {
-            containerSliderTrackVertical.style.display = 'none';
             containerSliderTrack.style.display = 'flex';
             zoomOptions.style.marginBottom = '15px';
           }
@@ -388,7 +368,11 @@ export default class SCameraUIController {
         lastClickedLabel = label;
 
         const percent = (clickedZoom - min) / (max - min);
-        visualIndicator.style.left = `${percent * 100}%`;
+        if (isVertical) {
+          visualIndicator.style.bottom = `${percent * 100}%`;
+        } else {
+          visualIndicator.style.left = `${percent * 100}%`;
+        }
 
         containerSliderTrack.style.display = 'none';
         //teste landscape aqui
@@ -461,7 +445,12 @@ export default class SCameraUIController {
 
       await SCamera.captureController.setZoom(clampedZoom);
       currentZoom = clampedZoom;
-      visualIndicator.style.left = `${percent * 100}%`;
+
+      if (isVertical) {
+        visualIndicator.style.bottom = `${percent * 100}%`;
+      } else {
+        visualIndicator.style.left = `${percent * 100}%`;
+      }
 
       if (sliderLabel) sliderLabel.remove();
       sliderLabel = createZoomLabel(clampedZoom);
@@ -749,7 +738,11 @@ export default class SCameraUIController {
     const zoomOptions = document.querySelector('.zoom-options');
     const zoomOptionsContainer = document.querySelector('.zoom-options-container');
     const zoomSliderContainer = document.querySelector('.zoom-slider-container');
-    // const zoomSliderTrack = document.querySelector('.zoom-slider-track-container');
+    const zoomSliderTrackContainer = document.querySelector('.zoom-slider-track-container');
+    const zoomSliderTrack = document.querySelector('.zoom-slider-track');
+    const zoomSliderTrackBefore = document.querySelector('.zoom-slider-track::before');
+    const zoomIndicator = document.querySelector('.zoom-indicator');
+    const zoomTouchArea = document.querySelector('.zoom-touch-area');
 
     if (this._autoRotate === true) {
       mobileControls.classList.add('landscape');
@@ -759,7 +752,11 @@ export default class SCameraUIController {
       //o margin rigth é necessário para quando o zoomSliderTrack for aberto (160px)
       zoomOptionsContainer.classList.add('landscape');
       zoomSliderContainer.classList.add('landscape');
-      // zoomSliderTrack.classList.add('landscape');
+      zoomSliderTrackContainer.classList.add('landscape');
+      zoomSliderTrack.classList.add('landscape');
+      zoomSliderTrackBefore.classList.add('landscape');
+      zoomIndicator.classList.add('landscape');
+      zoomTouchArea.classList.add('landscape');
 
       icons.forEach(icon => {
         icon.style.transition = 'none';
@@ -772,7 +769,12 @@ export default class SCameraUIController {
       zoomOptions.classList.remove('landscape');
       zoomOptionsContainer.classList.remove('landscape');
       zoomSliderContainer.classList.remove('landscape');
-      // zoomSliderTrack.classList.remove('landscape');
+      zoomSliderTrackContainer.classList.remove('landscape');
+      zoomSliderTrack.classList.remove('landscape');
+      zoomSliderTrackBefore.classList.remove('landscape');
+      zoomIndicator.classList.remove('landscape');
+      zoomTouchArea.classList.remove('landscape');
+      
       icons.forEach(icon => {
         icon.style.transition = 'transform 0.3s ease';
         icon.style.transform = `rotate(${degrees}deg)`;
