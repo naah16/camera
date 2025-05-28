@@ -287,14 +287,33 @@ export default class SCameraUIController {
     const touchArea = document.createElement('div');
     touchArea.className = 'zoom-touch-area';
 
+    //novo container para o slider vertical
+    const containerSliderTrackVertical = document.createElement('div');
+    containerSliderTrackVertical.className = 'zoom-slider-track-container vertical';
+    containerSliderTrackVertical.style.display = 'none';
+
+    const sliderTrackVertical = document.createElement('div');
+    sliderTrackVertical.className = 'zoom-slider-track';
+
+    const visualIndicatorVertical = document.createElement('div');
+    visualIndicatorVertical.className = 'zoom-indicator';
+
+    const touchAreaVertical = document.createElement('div');
+    touchAreaVertical.className = 'zoom-touch-area';
+
     sliderTrack.appendChild(visualIndicator);
     sliderTrack.appendChild(touchArea);
     containerSliderTrack.appendChild(sliderTrack);
+
+    sliderTrackVertical.appendChild(visualIndicatorVertical);
+    sliderTrackVertical.appendChild(touchAreaVertical);
+    containerSliderTrackVertical.appendChild(sliderTrackVertical);
 
     zoomOptions.appendChild(zoomOptionsContainer);
     zoomOptions.appendChild(customZoomContainer);
     zoomControl.appendChild(zoomOptions);
     zoomControl.appendChild(containerSliderTrack);
+    zoomControl.appendChild(containerSliderTrackVertical);
 
     this.zoomIndicator = visualIndicator;
     this.zoomTrack = sliderTrack;
@@ -350,8 +369,16 @@ export default class SCameraUIController {
         const clickedZoom = parseFloat(label.dataset.zoom);
 
         if (lastClickedLabel === label && isExpanded) {
-          containerSliderTrack.style.display = 'flex';
-          zoomOptions.style.marginBottom = '15px';
+          if (this._autoRotate) {
+            containerSliderTrackVertical.style.display = 'flex';
+            containerSliderTrack.style.display = 'none';
+            zoomOptions.style.marginBottom = '0px';
+            zoomOptions.style.right = '120px';
+          } else {
+            containerSliderTrackVertical.style.display = 'none';
+            containerSliderTrack.style.display = 'flex';
+            zoomOptions.style.marginBottom = '15px';
+          }
           return;
         }
 
@@ -722,7 +749,7 @@ export default class SCameraUIController {
     const zoomOptions = document.querySelector('.zoom-options');
     const zoomOptionsContainer = document.querySelector('.zoom-options-container');
     const zoomSliderContainer = document.querySelector('.zoom-slider-container');
-    const zoomSliderTrack = document.querySelector('.zoom-slider-track-container');
+    // const zoomSliderTrack = document.querySelector('.zoom-slider-track-container');
 
     if (this._autoRotate === true) {
       mobileControls.classList.add('landscape');
@@ -732,7 +759,7 @@ export default class SCameraUIController {
       //o margin rigth é necessário para quando o zoomSliderTrack for aberto (160px)
       zoomOptionsContainer.classList.add('landscape');
       zoomSliderContainer.classList.add('landscape');
-      zoomSliderTrack.classList.add('landscape');
+      // zoomSliderTrack.classList.add('landscape');
 
       icons.forEach(icon => {
         icon.style.transition = 'none';
@@ -745,7 +772,7 @@ export default class SCameraUIController {
       zoomOptions.classList.remove('landscape');
       zoomOptionsContainer.classList.remove('landscape');
       zoomSliderContainer.classList.remove('landscape');
-      zoomSliderTrack.classList.remove('landscape');
+      // zoomSliderTrack.classList.remove('landscape');
       icons.forEach(icon => {
         icon.style.transition = 'transform 0.3s ease';
         icon.style.transform = `rotate(${degrees}deg)`;

@@ -554,7 +554,7 @@ video::-webkit-media-controls-panel {
 
 .mobile-controls.landscape {
   left: auto;
-  height: '-webkit-fill-available';
+  height: -webkit-fill-available;
 }
 
 .mobile-actions-container.landscape {
@@ -568,10 +568,12 @@ video::-webkit-media-controls-panel {
 }
 
 .zoom-options.landscape {
+  position: relative;
   flex-direction: column-reverse;
   margin-bottom: 0;
   margin-right: 10px;
   z-index: 1001;
+  right: 50px;
   /* o margin rigth é necessário para quando o zoomSliderTrack for aberto (160px) */
 }
 
@@ -581,18 +583,18 @@ video::-webkit-media-controls-panel {
 }
 
 .zoom-slider-container.landscape {
-  left: auto;
   flex-direction: row;
+  height: 100%;
 }
 
-.zoom-slider-track-container.landscape {
+/* .zoom-slider-track-container.landscape {
   position: absolute;
   top: 50%;
   right: 10px; /* distância da borda direita */
   transform: translateY(-50%) rotate(-90deg);
   transform-origin: center;
   height: auto;
-  width: 160px; /* largura da barra após rotação */
+  width: 60px; /* largura da barra após rotação */
   display: flex;
   justify-content: center;
-}
+} */
