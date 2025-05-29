@@ -1,12 +1,12 @@
 export default class SCameraUIController {
   constructor() {
-    this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    this.isMobile = SDevice?.isMobile ?? /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     this.photoPreview = null;
     this.orientation = null;
     this.rotation = 0;
     this.zoomIndicator = null;
     this.zoomTrack = null;
-    this._autoRotate = this.isMobile && screen.availHeight < screen.availWidth;
+    this._autoRotate = this.isMobile && window.innerHeight < window.innerWidth;
   }
 
   init() {
@@ -49,6 +49,32 @@ export default class SCameraUIController {
     }
     
     document.body.appendChild(cameraContainer);
+    this.createLoadingScreen();
+  }
+
+  createLoadingScreen() {
+    const cameraBody = document.querySelector('.camera-container');
+    const loadingContainer = document.createElement('div');
+
+    loadingContainer.className = 'loading-container';
+    loadingContainer.innerHTML = `
+      <div class="loading-spinner rotation">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><title>loading</title><path d="M12,4V2A10,10 0 0,0 2,12H4A8,8 0 0,1 12,4Z" /></svg>
+      </div>
+      <p>Aguarde, carregando câmera...</p>
+    `;
+    
+    cameraBody.appendChild(loadingContainer);
+    
+    return loadingContainer;
+  }
+
+  hideLoadingScreen() {
+    const loadingContainer = document.querySelector('.loading-container');
+
+    if (loadingContainer) {
+      loadingContainer.remove();
+    }
   }
 
   async createMobileControls(container) {
@@ -121,6 +147,10 @@ export default class SCameraUIController {
     
     shutterBtn.addEventListener('click', async () => {
       try {
+        if(SCamera.captureController.isLoadingCamera){
+          return;
+        }
+
         shutterBtn.disabled = true;
         shutterBtn.classList.add('animate');
 
@@ -239,6 +269,9 @@ export default class SCameraUIController {
     flashBtn.innerHTML = svgDisabled;
 
     flashBtn.addEventListener('click', async () => {
+      if (SCamera.captureController.isLoadingCamera) {
+        return;
+      }
       if (!SCamera.captureController.capabilities?.torch) return;
 
       const newState = !SCamera.currentConfig.flash;
@@ -270,6 +303,9 @@ export default class SCameraUIController {
 
     const zoomOptions = document.createElement('div');
     zoomOptions.className = 'zoom-options';
+
+    const sliderLabel = document.createElement('div');
+    sliderLabel.className = 'zoom-value-label';
 
     const customZoomContainer = document.createElement('div');
     customZoomContainer.className = 'custom-zoom-container';
@@ -331,7 +367,6 @@ export default class SCameraUIController {
     const zoomSteps = [1, 2, 3, max];
     let currentZoom = 1;
     let lastClickedLabel = null;
-    let sliderLabel = null;
     let isExpanded = false;
     const predefinedLabels = {};
     let isDragging = false;
@@ -347,6 +382,9 @@ export default class SCameraUIController {
 
       label.addEventListener('click', async (e) => {
         e.stopPropagation();
+        if (SCamera.captureController.isLoadingCamera) {
+          return;
+        }
         const clickedZoom = parseFloat(label.dataset.zoom);
 
         if (lastClickedLabel === label && isExpanded) {
@@ -393,7 +431,6 @@ export default class SCameraUIController {
         if (e.target.parentElement != customZoomContainer) {
           customZoomContainer.firstElementChild?.remove();
         }
-        sliderLabel = null;
       });
 
       return label;
@@ -457,8 +494,9 @@ export default class SCameraUIController {
         visualIndicator.style.bottom = '0%';
       }
 
-      if (sliderLabel) sliderLabel.remove();
-      sliderLabel = createZoomLabel(clampedZoom);
+      sliderLabel.textContent = formatZoom(clampedZoom);
+      sliderLabel.dataset.zoom = clampedZoom;
+      sliderLabel.classList.add('active');
 
       customZoomContainer.innerHTML = '';
       customZoomContainer.appendChild(sliderLabel);
@@ -545,10 +583,6 @@ export default class SCameraUIController {
           zoomOptionsContainer.appendChild(label);
         });
 
-        customZoomContainer.innerHTML = '';
-        if (sliderLabel) {
-          customZoomContainer.appendChild(sliderLabel);
-        }
         isExpanded = false;
       }
     });
@@ -689,6 +723,7 @@ export default class SCameraUIController {
     document.getElementById('retry-camera-btn').addEventListener('click', async () => {
       errorContainer.remove();
       try {
+        this.createLoadingScreen();
         await SCamera.captureController.getCameraStream();
       } catch (error) {
         this.showCameraError(error.message);
@@ -726,7 +761,10 @@ export default class SCameraUIController {
     let rotation = 0;
     let orientation;
     
-    this._autoRotate = this.isMobile && screen.availHeight < screen.availWidth;
+    let newAutoRotate = SDevice.isMobile && window.innerHeight < window.innerWidth;
+    let hasAutoRotateChanged = newAutoRotate != this._autoRotate;
+    this._autoRotate = newAutoRotate;
+
     if (x > 7) {
       if (navigator.userAgent.indexOf('Android') >= 0){
         rotation = 90; // Landscape Left
@@ -748,7 +786,7 @@ export default class SCameraUIController {
 
     this.orientation = orientation;
     this.rotation = rotation;
-    this.rotateIcons(rotation);
+    this.rotateIcons(rotation, hasAutoRotateChanged);
   }
 
   rotateIcons(degrees, autoRotateChanged = false) {

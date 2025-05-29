@@ -10,6 +10,7 @@ export default class SCameraCaptureController {
     this.torchEnabled = false;
     this.blob = null;
     this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    this.isLoadingCamera = false;
     // this.isAndroidWebView = navigator.userAgent.includes('Android') && window.navigator.standalone !== true;
   }
 
@@ -24,8 +25,11 @@ export default class SCameraCaptureController {
   onVisibilityChange() {
     document.addEventListener('visibilitychange', async () => {
       if (document.visibilityState === 'visible') {
-        try {
-          await this.getCameraStream();
+          try {
+            SCamera.uiController.createLoadingScreen();
+            await this.getCameraStream();
+            await this.resetZoom();
+            this.resetFlash();
         } catch (error) {
           console.error('Erro ao tentar reiniciar a câmera após retornar ao app:', error);
           SCamera.uiController?.showCameraError('Erro ao tentar reiniciar a câmera');
@@ -38,6 +42,7 @@ export default class SCameraCaptureController {
 
   async getCameraStream(constraints = null) {
     // Liberar stream atual se existir
+    this.isLoadingCamera = true;
     if (this.currentStream) {
       this.stopCurrentStream();
     }
@@ -102,6 +107,9 @@ export default class SCameraCaptureController {
       console.error('Error accessing camera:', error);
       SCamera.uiController?.showCameraError();
       throw error;
+    } finally {
+      this.isLoadingCamera = false;
+      SCamera.uiController.hideLoadingScreen();
     }
   }
 
@@ -120,7 +128,7 @@ export default class SCameraCaptureController {
     );
 
     SCamera.currentConfig.facingMode = SCamera.currentConfig.facingMode == "user" ? "environment" : "user";
-
+    
     const videoElement = document.querySelector('.camera-preview');
     const zoomElement = document.querySelector('.zoom-slider-container');
     const flashBtn = document.querySelector('.flash-btn');
@@ -186,7 +194,6 @@ export default class SCameraCaptureController {
       flashBtn.innerHTML = torchDisabled;
     }
     this.toggleFlash(false);
-    this.torchEnabled = false;
   }
 
   async switchDesktopCamera() {
@@ -232,12 +239,12 @@ export default class SCameraCaptureController {
         ctx.save();
 
         if (!isLandscape && Math.abs(rotation) === 90) {
-          ctx.canvas.width = height;
-          ctx.canvas.height = width;
-        } else {
-          ctx.canvas.width = width;
-          ctx.canvas.height = height;
-        }
+            ctx.canvas.width = height;
+            ctx.canvas.height = width;
+          } else {
+            ctx.canvas.width = width;
+            ctx.canvas.height = height;
+          }
         
         ctx.translate(ctx.canvas.width / 2, ctx.canvas.height / 2);
 
