@@ -761,7 +761,7 @@ export default class SCameraUIController {
     let rotation = 0;
     let orientation;
     
-    let newAutoRotate = SDevice.isMobile && window.innerHeight < window.innerWidth;
+    let newAutoRotate = this.isMobile && window.innerHeight < window.innerWidth;
     let hasAutoRotateChanged = newAutoRotate != this._autoRotate;
     this._autoRotate = newAutoRotate;
 
