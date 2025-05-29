@@ -336,7 +336,6 @@ export default class SCameraUIController {
     const predefinedLabels = {};
     let isDragging = false;
     let scrollTimeout;
-    const isVertical = containerSliderTrack.classList.contains('landscape');
 
     const formatZoom = (value) => `x${value % 1 === 0 ? value : value.toFixed(1).replace('.0', '')}`;
 
@@ -351,13 +350,13 @@ export default class SCameraUIController {
         const clickedZoom = parseFloat(label.dataset.zoom);
 
         if (lastClickedLabel === label && isExpanded) {
+          containerSliderTrack.style.display = 'flex';
           if (this._autoRotate) {
-            containerSliderTrack.style.display = 'none';
             zoomOptions.style.marginBottom = '0px';
-            zoomOptions.style.right = '120px';
+            zoomOptions.style.marginRight = '10px';
           } else {
-            containerSliderTrack.style.display = 'flex';
-            zoomOptions.style.marginBottom = '15px';
+            zoomOptions.style.marginBottom = '10px';
+            zoomOptions.style.marginRight = '0px';
           }
           return;
         }
@@ -368,10 +367,12 @@ export default class SCameraUIController {
         lastClickedLabel = label;
 
         const percent = (clickedZoom - min) / (max - min);
-        if (isVertical) {
+        if (this._autoRotate) {
           visualIndicator.style.bottom = `${percent * 100}%`;
+          visualIndicator.style.left = '0%';
         } else {
           visualIndicator.style.left = `${percent * 100}%`;
+          visualIndicator.style.bottom = '0%';
         }
 
         containerSliderTrack.style.display = 'none';
@@ -379,9 +380,11 @@ export default class SCameraUIController {
         if (this._autoRotate) {
           zoomOptions.classList.add('landscape');
           zoomOptions.style.marginBottom = '0px';
+          zoomOptions.style.marginRight = '160px';
         } else {
           zoomOptions.classList.remove('landscape');
           zoomOptions.style.marginBottom = '160px';
+          zoomOptions.style.marginRight = '0px';
         }
 
         document.querySelectorAll('.zoom-value-label').forEach(el => el.classList.remove('active'));
@@ -390,7 +393,7 @@ export default class SCameraUIController {
         if (e.target.parentElement != customZoomContainer) {
           customZoomContainer.firstElementChild?.remove();
         }
-        sliderLabel = null; // <== CORREÇÃO
+        sliderLabel = null;
       });
 
       return label;
@@ -446,10 +449,12 @@ export default class SCameraUIController {
       await SCamera.captureController.setZoom(clampedZoom);
       currentZoom = clampedZoom;
 
-      if (isVertical) {
+      if (this._autoRotate) {
         visualIndicator.style.bottom = `${percent * 100}%`;
+        visualIndicator.style.left = '0%';
       } else {
         visualIndicator.style.left = `${percent * 100}%`;
+        visualIndicator.style.bottom = '0%';
       }
 
       if (sliderLabel) sliderLabel.remove();
@@ -470,9 +475,14 @@ export default class SCameraUIController {
       }, 500);
     };
 
-    const handlePositionUpdate = (clientX) => {
+    const handlePositionUpdate = (e) => {
       const rect = sliderTrack.getBoundingClientRect();
-      const percent = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+      let percent;
+      if (this._autoRotate) {
+        percent = Math.min(1, Math.max(0, (rect.bottom - e.clientY) / rect.height));
+      } else {
+        percent = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+      }
       updateZoomFromPercent(percent);
     };
 
@@ -480,11 +490,11 @@ export default class SCameraUIController {
     touchArea.addEventListener('mousedown', (e) => {
       e.stopPropagation();
       isDragging = true;
-      handlePositionUpdate(e.clientX);
+      handlePositionUpdate(e);
     });
 
     window.addEventListener('mousemove', (e) => {
-      if (isDragging) handlePositionUpdate(e.clientX);
+      if (isDragging) handlePositionUpdate(e);
     });
 
     window.addEventListener('mouseup', () => {
@@ -493,17 +503,27 @@ export default class SCameraUIController {
 
     // Touch events
     touchArea.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       isDragging = true;
-      handlePositionUpdate(e.touches[0].clientX);
-    }, { passive: true });
+      handlePositionUpdate(e.touches[0]);
+    }, { passive: false });
 
     window.addEventListener('touchmove', (e) => {
-      if (isDragging) handlePositionUpdate(e.touches[0].clientX);
-    }, { passive: true });
+      if (isDragging) {
+        e.preventDefault();
+        e.stopPropagation();
+        handlePositionUpdate(e.touches[0]);
+      }
+    }, { passive: false });
 
-    window.addEventListener('touchend', () => {
-      if (isDragging) endScroll();
-    });
+    window.addEventListener('touchend', (e) => {
+      if (isDragging) {
+        e.preventDefault();
+        e.stopPropagation();
+        endScroll();
+      }
+    }, { passive: false });
 
     document.addEventListener('click', (e) => {
       if (!zoomControl.contains(e.target)) {
@@ -512,9 +532,11 @@ export default class SCameraUIController {
         if (this._autoRotate) {
           zoomOptions.classList.add('landscape');
           zoomOptions.style.marginBottom = '0px';
+          zoomOptions.style.marginRight = '160px';
         } else {
           zoomOptions.classList.remove('landscape');
           zoomOptions.style.marginBottom = '160px';
+          zoomOptions.style.marginRight = '0px';
         }
 
         zoomOptionsContainer.innerHTML = '';
@@ -729,35 +751,81 @@ export default class SCameraUIController {
     this.rotateIcons(rotation);
   }
 
-  rotateIcons(degrees) {
+  rotateIcons(degrees, autoRotateChanged = false) {
     const icons = document.querySelectorAll('.mobile-switch, .mobile-flash, .zoom-value-label, .leave-camera-btn');
 
-    const elements = [
-      document.querySelector('.mobile-controls'),
-      document.querySelector('.mobile-actions-container'),
-      document.querySelector('.leave-camera-btn'),
-      document.querySelector('.zoom-options'),
-      document.querySelector('.zoom-options-container'),
-      document.querySelector('.zoom-slider-container'),
-      document.querySelector('.zoom-slider-track-container'),
-      document.querySelector('.zoom-slider-track'),
-      document.querySelector('.zoom-indicator'),
-      document.querySelector('.zoom-touch-area')
-    ];
+    const elements = {
+      mobileControls: document.querySelector('.mobile-controls'),
+      mobileActions: document.querySelector('.mobile-actions-container'),
+      leaveCameraBtn: document.querySelector('.leave-camera-btn'),
+      zoomOptions: document.querySelector('.zoom-options'),
+      zoomOptionsContainer: document.querySelector('.zoom-options-container'),
+      zoomSliderContainer: document.querySelector('.zoom-slider-container'),
+      zoomSliderTrackContainer: document.querySelector('.zoom-slider-track-container'),
+      zoomSliderTrack: document.querySelector('.zoom-slider-track'),
+      zoomIndicator: document.querySelector('.zoom-indicator'),
+      zoomTouchArea: document.querySelector('.zoom-touch-area')
+    };
+
+    const applyStyles = (el, styles = {}) => {
+      if (!el) return;
+      Object.entries(styles).forEach(([prop, val]) => {
+        el.style[prop] = val;
+      });
+    };
+
+    const toggleLandscapeClass = (action) => {
+      Object.values(elements).forEach(el => {
+        if (el) el.classList[action]('landscape');
+      });
+    };
 
     if (this._autoRotate === true) {
-      elements.forEach(el => {
-        if (el) el.classList.add('landscape');
-      });
+      toggleLandscapeClass('add');
+
+      if (autoRotateChanged) {
+        applyStyles(elements.zoomIndicator, {
+          bottom: elements.zoomIndicator?.style.left,
+          left: '0%'
+        });
+
+        applyStyles(elements.zoomOptions, {
+          marginRight: '10px',
+          marginBottom: '0px'
+        });
+
+        if (elements.zoomSliderTrackContainer?.style.display === 'none') {
+          applyStyles(elements.zoomOptions, {
+            marginRight: '160px'
+          });
+        }
+      }
 
       icons.forEach(icon => {
         icon.style.transition = 'none';
-        icon.style.transform = `rotate(0deg)`;
+        icon.style.transform = 'rotate(0deg)';
       });
+
     } else {
-      elements.forEach(el => {
-        if (el) el.classList.remove('landscape');
-      });
+      toggleLandscapeClass('remove');
+
+      if (autoRotateChanged) {
+        applyStyles(elements.zoomIndicator, {
+          left: elements.zoomIndicator?.style.bottom,
+          bottom: '0%'
+        });
+
+        applyStyles(elements.zoomOptions, {
+          marginRight: '0px',
+          marginBottom: '10px'
+        });
+
+        if (elements.zoomSliderTrackContainer?.style.display === 'none') {
+          applyStyles(elements.zoomOptions, {
+            marginBottom: '160px'
+          });
+        }
+      }
 
       icons.forEach(icon => {
         icon.style.transition = 'transform 0.3s ease';
