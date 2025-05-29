@@ -1,6 +1,6 @@
 export default class SCameraUIController {
   constructor() {
-    this.isMobile = SDevice?.isMobile ?? /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     this.photoPreview = null;
     this.orientation = null;
     this.rotation = 0;
