@@ -16,7 +16,8 @@ export default class SCameraCaptureController {
 
   async init() {
     this.currentStream = await navigator.mediaDevices.getUserMedia({
-      video: true
+      video: true,
+      audio: false
     });
     await this.getCameraStream();
     this.onVisibilityChange();
@@ -40,72 +41,63 @@ export default class SCameraCaptureController {
     });
   }
 
-  async getCameraStream(constraints = null) {
-    // Liberar stream atual se existir
-    this.isLoadingCamera = true;
-    if (this.currentStream) {
-      this.stopCurrentStream();
-    }
-
-    const defaultConstraints = {
-      video: {
-        facingMode: SCamera.currentConfig.facingMode,
-        width: { ideal: SCamera.currentConfig.resolution.width },
-        height: { ideal: SCamera.currentConfig.resolution.height },
-        deviceId: SCamera.currentConfig.deviceId ? { exact: SCamera.currentConfig.deviceId } : undefined
-      },
-      audio: false,
-    };
-
-    const finalConstraints = constraints || defaultConstraints;
-
+  async getCameraStream() {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia(finalConstraints);
-      this.currentStream = stream;
-      this.videoTrack = stream.getVideoTracks()[0];
-
-      if (!this.videoTrack) {
-        throw new Error('No video track available');
+      this.isLoadingCamera = true;
+      // Liberar stream atual se existir
+      if (this.currentStream) {
+        this.stopCurrentStream();
       }
 
-      // Configurar capacidades da câmera
-      this.capabilities = this.videoTrack.getCapabilities?.() || null;
-      this.settings = this.videoTrack.getSettings();
-      this.currentDeviceId = this.settings.deviceId;
+      const constraints = {
+        video: {
+          width: { ideal: SCamera.currentConfig.resolution.width },
+          height: { ideal: SCamera.currentConfig.resolution.height },
+          facingMode: SCamera.currentConfig.facingMode
+        },
+        audio: false
+      };
 
-      // console.log("Capacidades da câmera:", this.capabilities);
-      
-      // Inicializa ImageCapture se suportado
-      if ('ImageCapture' in window) {
-        this.imageCapture = new ImageCapture(this.videoTrack);
+      if (SCamera.currentConfig.deviceId) {
+        constraints.video.deviceId = { exact: SCamera.currentConfig.deviceId };
       }
+
+      this.currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+      this.setupTracks(this.currentStream);
 
       const videoElement = document.querySelector('.camera-preview');
       if (videoElement) {
-        videoElement.srcObject = stream;
-        await videoElement.play();
-        
-        if (this.settings.facingMode === 'user') {
-          videoElement.style.transform = 'scaleX(-1)';
-        } else {
-          videoElement.style.transform = 'scaleX(1)';
+        videoElement.srcObject = this.currentStream;
+      }
+
+      await this.extractCapabilities();
+    } catch (error) {
+      console.error('Erro ao acessar câmera:', error);
+
+      if (error.name === 'NotFoundError' || error.name === 'OverconstrainedError') {
+        try {
+          console.warn('Tentando iniciar com câmera padrão...');
+          delete SCamera.currentConfig.deviceId;
+
+          this.currentStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: SCamera.currentConfig.facingMode },
+            audio: false
+          });
+          this.setupTracks(this.currentStream);
+
+          const videoElement = document.querySelector('.camera-preview');
+          if (videoElement) {
+            videoElement.srcObject = this.currentStream;
+          }
+
+          await this.extractCapabilities();
+          return;
+        } catch (fallbackError) {
+          console.error('Falha ao tentar fallback da câmera:', fallbackError);
         }
       }
-      
-      if (navigator.userAgent.indexOf('Android') >= 0) {
-        const isPortrait = screen.availHeight > screen.availWidth;
-        // Atualiza configurações no SCamera
-        SCamera.currentConfig.deviceId = this.currentDeviceId;
-        SCamera.currentConfig.resolution = {
-          width: isPortrait ? this.settings.height : this.settings.width,
-          height: isPortrait ? this.settings.width : this.settings.height
-        };
-      }
-      
-      return stream;
-    } catch (error) {
-      console.error('Error accessing camera:', error);
-      SCamera.uiController?.showCameraError();
+
+      SCamera.uiController?.showCameraError('Erro ao acessar a câmera. Ela pode estar sendo usada por outro aplicativo.');
       throw error;
     } finally {
       this.isLoadingCamera = false;
@@ -120,6 +112,30 @@ export default class SCameraCaptureController {
       this.imageCapture = null;
       this.videoTrack = null;
     }
+  }
+
+  async extractCapabilities() {
+    if (!this.videoTrack) return;
+
+    const capabilities = this.videoTrack.getCapabilities();
+    const settings = this.videoTrack.getSettings();
+
+    this.capabilities = capabilities;
+    this.settings = settings;
+  }
+
+  setupTracks(stream) {
+    const videoTrack = stream.getVideoTracks()[0];
+    this.videoTrack = videoTrack;
+
+    // ImageCapture permite tirar foto com mais qualidade (se suportado)
+    if ('ImageCapture' in window) {
+      this.imageCapture = new ImageCapture(videoTrack);
+    }
+
+    // Atualiza configurações disponíveis da câmera
+    this.capabilities = videoTrack.getCapabilities();
+    this.settings = videoTrack.getSettings();
   }
 
   async switchMobileCamera() {

@@ -159,6 +159,8 @@ export default class SCameraUIController {
         }, 200);
 
         const photoBlob = await SCamera.capturePhoto();
+        await SCamera.captureController.resetZoom();
+        SCamera.captureController.resetFlash();
         this.showPhotoPreview(photoBlob);
       } catch (error) {
         console.error('Capture error:', error);
@@ -201,7 +203,7 @@ export default class SCameraUIController {
       return switchCamBtn;
     } else {
       const cameras = await SCamera.listCameras();
-      
+
       if(cameras.length < 2) {
         return;
       }
