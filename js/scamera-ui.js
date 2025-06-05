@@ -7,6 +7,8 @@ export default class SCameraUIController {
     this.zoomIndicator = null;
     this.zoomTrack = null;
     this._autoRotate = this.isMobile && window.innerHeight < window.innerWidth;
+    this.photos = []; // Array para armazenar todas as fotos tiradas
+    this.currentPhotoIndex = -1; // Índice da foto atualmente selecionada
   }
 
   init() {
@@ -595,36 +597,136 @@ export default class SCameraUIController {
   }
 
   showPhotoPreview(photoBlob) {
-    // esconder visualização da câmera
+    // Adiciona a nova foto ao array
+    this.photos.push(photoBlob);
+    this.currentPhotoIndex = this.photos.length - 1;
+    
+    // Esconde a visualização da câmera
     const viewfinder = document.querySelector('.viewfinder-container');
     const mobileControls = document.querySelector('.mobile-controls');
     
-    viewfinder.style.display = 'none';
+    // viewfinder.style.display = 'none';
     if (mobileControls) {
       mobileControls.style.display = 'none';
     }
     
-    // criar ou atualizar preview da foto
+    // Cria ou atualiza o preview
+    this.createPhotoPreview();
+    
+    // Mostra a foto atual
+    this.displayCurrentPhoto();
+    
+    // Atualiza a galeria de previews
+    this.updatePhotoGallery();
+  }
+
+  createPhotoPreview() {
     if (!this.photoPreview) {
       this.photoPreview = document.createElement('div');
       this.photoPreview.className = 'photo-preview';
       
-      const img = document.createElement('img');
-      img.className = 'captured-photo';
+      // Container principal da foto
+      const photoContainer = document.createElement('div');
+      photoContainer.className = 'photo-container';
       
+      // Imagem principal
+      this.mainPhoto = document.createElement('img');
+      this.mainPhoto.className = 'captured-photo';
+      
+      // Botão de deletar
+      this.deleteBtn = document.createElement('button');
+      this.deleteBtn.className = 'delete-photo-btn';
+      this.deleteBtn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><title>delete</title>
+          <path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" />
+        </svg>
+      `;
+      this.deleteBtn.addEventListener('click', () => this.deleteCurrentPhoto());
+      
+      photoContainer.appendChild(this.mainPhoto);
+      photoContainer.appendChild(this.deleteBtn);
+
+      // Botão de fechar preview
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'photo-action-btn close-preview-btn';
+      closeBtn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icons-photo-actions">
+          <title>close</title>
+          <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
+        </svg>
+        <div>Fechar</div>
+      `;
+      closeBtn.addEventListener('click', () => {
+        photoPreview.remove(); // remove a visualização da imagem
+      });
+      
+      // Galeria de previews
+      this.photoGallery = document.createElement('div');
+      this.photoGallery.className = 'photo-gallery';
+      
+      // Ações (confirmar/cancelar)
       const actions = this.isMobile ? this.createPhotoActionsMobile() : this.createPhotoActionsDesktop();
       
-      this.photoPreview.appendChild(img);
+      this.photoPreview.appendChild(photoContainer);
+      this.photoPreview.appendChild(closeBtn);
+      this.photoPreview.appendChild(this.photoGallery);
       this.photoPreview.appendChild(actions);
+      
       document.querySelector('.camera-body').appendChild(this.photoPreview);
     }
+  }
+
+  displayCurrentPhoto() {
+    if (this.currentPhotoIndex >= 0 && this.currentPhotoIndex < this.photos.length) {
+      const photoBlob = this.photos[this.currentPhotoIndex];
+      this.mainPhoto.src = URL.createObjectURL(photoBlob);
+      this.mainPhoto.dataset.blobUrl = this.mainPhoto.src;
+      this.deleteBtn.style.display = 'block';
+    }
+  }
+
+  updatePhotoGallery() {
+    this.photoGallery.innerHTML = '';
     
-    // atualizar a imagem
-    const img = this.photoPreview.querySelector('.captured-photo');
-    img.src = URL.createObjectURL(photoBlob);
-    
-    // salvar referência ao Blob para download
-    img.dataset.blobUrl = img.src;
+    this.photos.forEach((photo, index) => {
+      const thumbnail = document.createElement('div');
+      thumbnail.className = 'photo-thumbnail';
+      if (index === this.currentPhotoIndex) {
+        thumbnail.classList.add('active');
+      }
+      
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(photo);
+      
+      thumbnail.appendChild(img);
+      thumbnail.addEventListener('click', () => {
+        this.currentPhotoIndex = index;
+        this.displayCurrentPhoto();
+        this.updatePhotoGallery();
+      });
+      
+      this.photoGallery.appendChild(thumbnail);
+    });
+  }
+
+  deleteCurrentPhoto() {
+    if (this.currentPhotoIndex >= 0 && this.currentPhotoIndex < this.photos.length) {
+      // Revoga a URL do objeto da foto atual
+      URL.revokeObjectURL(this.mainPhoto.src);
+      
+      // Remove a foto do array
+      this.photos.splice(this.currentPhotoIndex, 1);
+      
+      if (this.photos.length === 0) {
+        // Se não há mais fotos, volta para a câmera
+        this.hidePhotoPreview();
+      } else {
+        // Ajusta o índice atual e atualiza a exibição
+        this.currentPhotoIndex = Math.min(this.currentPhotoIndex, this.photos.length - 1);
+        this.displayCurrentPhoto();
+        this.updatePhotoGallery();
+      }
+    }
   }
 
   createPhotoActionsMobile() {
@@ -646,8 +748,15 @@ export default class SCameraUIController {
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icons-photo-actions"><title>send</title>
       <path d="M2,21L23,12L2,3V10L17,12L2,14V21Z" />
     </svg>
-    <div>Confirmar</div>`;
-    downloadBtn.addEventListener('click', () => SCamera.sendBlob());
+    <div>Confirmar (${this.photos.length})</div>`;
+    downloadBtn.addEventListener('click', () => {
+      // Envia todas as fotos
+      this.photos.forEach(photo => {
+        SCamera.captureController.blob = photo;
+        SCamera.sendBlob();
+      });
+      this.hidePhotoPreview();
+    });
     
     actions.appendChild(closeBtn);
     actions.appendChild(downloadBtn);
@@ -685,15 +794,20 @@ export default class SCameraUIController {
 
   hidePhotoPreview() {
     if (this.photoPreview) {
-      const img = this.photoPreview.querySelector('.captured-photo');
-      if (img && img.src) {
-        URL.revokeObjectURL(img.src);
-      }
+      // Revoga todas as URLs de objeto
+      this.photos.forEach(photo => {
+        if (photo instanceof Blob) {
+          URL.revokeObjectURL(URL.createObjectURL(photo));
+        }
+      });
       
       this.photoPreview.remove();
       this.photoPreview = null;
+      this.photos = [];
+      this.currentPhotoIndex = -1;
     }
-    // mostrar novamente a visualização da câmera
+    
+    // Mostra novamente a visualização da câmera
     const viewfinder = document.querySelector('.viewfinder-container');
     const mobileControls = document.querySelector('.mobile-controls');
 
