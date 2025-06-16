@@ -109,8 +109,10 @@ video::-webkit-media-controls-panel {
 }
 
 .zoom-value-label {
-  max-width: 32px;
   width: 32px;
+  height: 32px;
+  max-height: 32px;
+  max-width: 32px;
   box-sizing: border-box;
   display: flex;
   align-items: center;
@@ -119,7 +121,7 @@ video::-webkit-media-controls-panel {
   color: #fff;
   font-weight: bold;
   font-size: 12px;
-  padding: 9px 10px;
+  padding: 8px;
   border-radius: 50%;
   -webkit-user-select: none;
 }
@@ -186,6 +188,25 @@ video::-webkit-media-controls-panel {
   /* background-color: rgba(255, 0, 0, 0.2); */
 }
 
+.open-zoom-slider {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.5);
+  border: none;
+  border-radius: 50px;
+}
+
+.open-zoom-slider > .icons-actions-container {
+  width: 17px;
+}
+
+.open-zoom-slider > .icons-actions-container.active {
+  fill: #FFD700;
+}
+
 .icons-photo-actions {
   width: 16px;
   fill: white;
@@ -210,6 +231,14 @@ video::-webkit-media-controls-panel {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   position: relative;
   -webkit-user-select: none;
+}
+
+.shutter-btn:hover {
+  cursor: pointer;
+  box-shadow:
+    0 0 10px rgb(51 51 51 / 50%),
+    0 4px 10px rgba(0, 0, 0, 0.25),
+    inset 0 0 5px rgba(255, 255, 255, 0.5);
 }
 
 .shutter-btn:active {
@@ -256,7 +285,7 @@ video::-webkit-media-controls-panel {
   -webkit-user-select: none;
 }
 
-.mobile-switch, .mobile-flash, .leave-camera-btn {
+.mobile-switch, .mobile-flash, .leave-camera-btn, .add-more-photos-btn, .previous-photo-btn {
   user-select: none;
   width: 45px;
   height: 45px;
@@ -277,34 +306,6 @@ video::-webkit-media-controls-panel {
 
 .switch-cam-btn.animate {
   animation: switchCamFlip 0.5s ease-in-out;
-}
-
-.mobile-zoom {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.mobile-zoom input[type="range"] {
-  width: 100%;
-  height: 30px;
-}
-
-.mobile-zoom .zoom-level {
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  font-size: 12px;
-  background: rgba(0, 0, 0, 0.3);
-  color: white;
-  padding: 5px;
-  border-radius: 100%;
 }
 
 .camera-select {
@@ -383,10 +384,8 @@ video::-webkit-media-controls-panel {
 
 .captured-photo {
   max-width: 100%;
-  max-height: 100%;
-  height: 100%;
   width: 100%;
-  object-fit: contain;
+  object-fit: cover;
 }
 
 .photo-actions {
@@ -416,13 +415,15 @@ video::-webkit-media-controls-panel {
 
 .photo-action-btn.download-btn {
   background: #2f8ee5;
+  gap: 6px;
 }
 
 .photo-action-btn.close-btn {
-  background: rgba(0, 0, 0, 0.8);
+  background: #999999cc;
 }
 
-.leave-camera-btn {
+.leave-camera-btn, .add-more-photos-btn {
+  background-color: #999999cc;
   cursor: pointer;
   user-select: none;
   right: 20px;
@@ -431,8 +432,8 @@ video::-webkit-media-controls-panel {
   -webkit-user-select: none;
 }
 
-.leave-camera-btn:hover {
-  background-color: rgba(0, 0, 0, 0.5);
+.leave-camera-btn:hover, .add-more-photos-btn:hover {
+  background-color: #999999dd;
 }
 
 /* Photo Action Desktop */
@@ -520,6 +521,16 @@ video::-webkit-media-controls-panel {
   cursor: pointer;
 }
 
+.previous-photo-btn {
+  height: 50px;
+  width: 50px;
+  display: flex;
+  position: absolute;
+  bottom: 180px;
+  right: 20px;
+  background-color: #57C279;
+}
+
 /* Photo Preview Styles */
 .photo-container {
   position: relative;
@@ -528,32 +539,6 @@ video::-webkit-media-controls-panel {
   display: flex;
   justify-content: center;
   align-items: center;
-}
-
-.delete-photo-btn {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background-color: rgba(0, 0, 0, 0.5);
-  border: none;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  z-index: 10;
-}
-
-.delete-photo-btn svg {
-  width: 24px;
-  height: 24px;
-  fill: white;
-}
-
-.delete-photo-btn:hover {
-  background-color: rgba(255, 0, 0, 0.7);
 }
 
 .photo-gallery {
@@ -571,7 +556,7 @@ video::-webkit-media-controls-panel {
 }
 
 .photo-thumbnail {
-  width: 60px;
+  width: 53px;
   height: 60px;
   flex-shrink: 0;
   border-radius: 4px;
@@ -591,6 +576,19 @@ video::-webkit-media-controls-panel {
   object-fit: cover;
 }
 
+.delete-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
 /* Hide scrollbar for photo gallery */
 .photo-gallery::-webkit-scrollbar {
   display: none;
@@ -599,6 +597,71 @@ video::-webkit-media-controls-panel {
 .photo-gallery {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+.photo-action-btn.close-preview-btn {
+  width: auto;
+  background: rgba(0, 0, 0, 0.8);
+  position: absolute;
+  top: 10px;
+  left: 10px;
+}
+
+/* dialog styles */
+.dialog-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+}
+
+.dialog-confirm {
+  width: 250px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #fff;
+  color: #000;
+  border: 1px solid #ccc;
+  padding: 20px;
+  border-radius: 10px;
+  z-index: 1002;
+  pointer-events: auto;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.dialog-buttons {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+  gap: 7px;
+}
+
+.dialog-buttons > button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 100px;
+  height: 33px;
+  color: white;
+  border: none;
+  border-radius: 15px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.dialog-buttons > .confirm-discard {
+  background-color: #d32f2f;
+  user-select: none;
+}
+
+.dialog-buttons > .cancel-discard {
+  background-color: #999999cc;
 }
 
 @keyframes switchCamFlip {
@@ -637,7 +700,7 @@ video::-webkit-media-controls-panel {
   height: 100%; 
 }
 
-.leave-camera-btn.landscape {
+.leave-camera-btn.landscape, .add-more-photos-btn.landscape {
   right: 0;
   left: 20px;
 }
@@ -696,6 +759,12 @@ video::-webkit-media-controls-panel {
 .zoom-touch-area.landscape {
   width: 40px;
   height: 100%;
+}
+
+.previous-photo-btn.landscape {
+  bottom: 0;
+  top: 20px;
+  right: 230px;
 }
 
 .rotation {

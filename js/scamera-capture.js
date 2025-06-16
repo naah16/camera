@@ -8,16 +8,15 @@ export default class SCameraCaptureController {
     this.settings = null;
     this.currentZoom = 1;
     this.torchEnabled = false;
-    this.blob = null;
+    this.blob = [];
     this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     this.isLoadingCamera = false;
-    // this.isAndroidWebView = navigator.userAgent.includes('Android') && window.navigator.standalone !== true;
+    this.isAndroidWebView = navigator.userAgent.includes('Android') && window.navigator.standalone !== true;
   }
 
   async init() {
     this.currentStream = await navigator.mediaDevices.getUserMedia({
-      video: true,
-      audio: false
+      video: true
     });
     await this.getCameraStream();
     this.onVisibilityChange();
@@ -148,22 +147,17 @@ export default class SCameraCaptureController {
     const videoElement = document.querySelector('.camera-preview');
     const zoomElement = document.querySelector('.zoom-slider-container');
     const flashBtn = document.querySelector('.flash-btn');
-    if (SCamera.currentConfig.facingMode == "user") {
-      videoElement.style.transform = 'scaleX(-1)';
-      if (zoomElement) {
-        zoomElement.style.display = 'none';
-      }
-      if (flashBtn) {
-        flashBtn.style.display = 'none';
-      }
-    } else {
-      videoElement.style.transform = 'scaleX(1)';
-      if (zoomElement) {
-        zoomElement.style.display = 'flex';
-      }
-      if (flashBtn) {
-        flashBtn.style.display = 'flex';
-      }
+    
+    const isUser = SCamera.currentConfig.facingMode === "user";
+
+    if (videoElement) {
+      videoElement.style.transform = isUser ? 'scaleX(-1)' : 'scaleX(1)';
+    }
+    if (zoomElement) {
+      zoomElement.style.display = isUser ? 'none' : 'flex';
+    }
+    if (flashBtn) {
+      flashBtn.style.display = isUser ? 'none' : 'flex';
     }
 
     try {
@@ -185,6 +179,38 @@ export default class SCameraCaptureController {
     }
   }
 
+  async switchDesktopCamera() {
+    const deviceId = SCamera.currentConfig.deviceId;
+
+    if (!deviceId) {
+      console.warn('Nenhum deviceId definido. Abortando troca de câmera.');
+      return;
+    }
+
+    const newCamera = SCamera.devices.cameras.find(cam => cam.deviceId === deviceId);
+    if (!newCamera) {
+      console.error('Câmera não encontrada com o deviceId fornecido.');
+      return;
+    }
+
+    // SCamera.currentConfig.facingMode = newCamera.label.toLowerCase().includes('front') ? 'user' : 'environment';
+
+    try {
+      await this.getCameraStream({
+        video: {
+          deviceId: { exact: deviceId },
+          width: { ideal: SCamera.currentConfig.resolution.width },
+          height: { ideal: SCamera.currentConfig.resolution.height },
+          facingMode: SCamera.currentConfig.facingMode
+        },
+        audio: false
+      });
+    } catch (error) {
+      console.error('Erro ao trocar a câmera:', error);
+      throw error;
+    }
+  }
+  
   async resetZoom() {
     await this.setZoom(1);
     SCamera.currentConfig.zoom = 1;
@@ -212,114 +238,60 @@ export default class SCameraCaptureController {
     this.toggleFlash(false);
   }
 
-  async switchDesktopCamera() {
-    const deviceId = SCamera.currentConfig.deviceId;
-
-    if (!deviceId) {
-      console.warn('Nenhum deviceId definido. Abortando troca de câmera.');
-      return;
-    }
-
-    const newCamera = SCamera.devices.cameras.find(cam => cam.deviceId === deviceId);
-    if (!newCamera) {
-      console.error('Câmera não encontrada com o deviceId fornecido.');
-      return;
-    }
-
-    SCamera.currentConfig.facingMode = newCamera.label.toLowerCase().includes('front') ? 'user' : 'environment';
-
-    try {
-      await this.getCameraStream({
-        video: {
-          deviceId: { exact: deviceId },
-          width: { ideal: SCamera.currentConfig.resolution.width },
-          height: { ideal: SCamera.currentConfig.resolution.height }
-        },
-        audio: false
-      });
-    } catch (error) {
-      console.error('Erro ao trocar a câmera:', error);
-      throw error;
-    }
-  }
-
   async capturePhoto() {
     try {
       let photoBlob;
+      const zoom = this.currentZoom || 1;
       const rotation = SCamera.uiController?.rotation || 0;
 
-      // Função utilitária para desenhar com rotação
-      function drawRotatedImage(ctx, image, rotation, facingMode, width, height) {
-        let isLandscape = SCamera.uiController?._autoRotate;
+       // método utilitário para desenhar com rotação
+      const draw = (ctx, image, width, height) => {
+        const scaledWidth = width / zoom;
+        const scaledHeight = height / zoom;
+        const offsetX = (width - scaledWidth) / 2;
+        const offsetY = (height - scaledHeight) / 2;
 
-        ctx.save();
+        this.drawRotatedImage(ctx, image, rotation, this.settings.facingMode, width, height, {
+          sx: offsetX,
+          sy: offsetY,
+          sWidth: scaledWidth,
+          sHeight: scaledHeight,
+        });
+      };
 
-        if (!isLandscape && Math.abs(rotation) === 90) {
-            ctx.canvas.width = height;
-            ctx.canvas.height = width;
-          } else {
-            ctx.canvas.width = width;
-            ctx.canvas.height = height;
-          }
-        
-        ctx.translate(ctx.canvas.width / 2, ctx.canvas.height / 2);
-
-        if(!isLandscape){
-          const angle = -rotation * Math.PI / 180;
-
-          ctx.rotate(angle);
-        }
-
-        let scaleX = 1;
-        if (facingMode === 'user') {
-          scaleX = -1;
-        }
-
-        ctx.scale(scaleX, 1);
-        ctx.drawImage(
-          image,
-          -width / 2,
-          -height / 2,
-          width,
-          height
-        );
-        ctx.restore();
-      }
-
-      // Tentar usar ImageCapture para melhor qualidade
       if (this.imageCapture) {
         try {
-          const photoBitmap = await this.imageCapture?.grabFrame();
-          
-          // Converter ImageBitmap para Blob
+          const photoBitmap = await this.imageCapture.grabFrame();
+          const width = photoBitmap.width;
+          const height = photoBitmap.height;
+
           const canvas = document.createElement('canvas');
           const ctx = canvas.getContext('2d');
+          draw(ctx, photoBitmap, width, height);
 
-          drawRotatedImage(ctx, photoBitmap, rotation, this.settings.facingMode, photoBitmap.width, photoBitmap.height);
-
-          photoBlob = await new Promise((resolve) => {
-            canvas.toBlob((newBlob) => resolve(newBlob), 'image/jpeg', 1);
-          });
-        } catch (error) {
-          console.warn('ImageCapture failed, falling back to canvas:', error);
+          photoBlob = await new Promise(resolve =>
+            canvas.toBlob(resolve, 'image/jpeg', 1)
+          );
+        } catch (err) {
+          console.warn('ImageCapture falhou:', err);
         }
       }
 
       // Fallback para canvas se ImageCapture não estiver disponível ou falhar
       if (!photoBlob) {
         const videoElement = document.querySelector('.camera-preview');
-        if (!videoElement) throw new Error('Video element not found');
+        if (!videoElement) throw new Error('Video não encontrado');
+
+        const width = videoElement.videoWidth;
+        const height = videoElement.videoHeight;
 
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
+        draw(ctx, video, width, height);
 
-        drawRotatedImage(ctx, videoElement, rotation, this.settings.facingMode, videoElement.videoWidth, videoElement.videoHeight);
-
-        photoBlob = await new Promise((resolve) => {
-          canvas.toBlob((newBlob) => {
-            resolve(newBlob);
-          }, 'image/jpeg', 1);
-        });
+        photoBlob = await new Promise(resolve =>
+          canvas.toBlob(resolve, 'image/jpeg', 1)
+        );
       }
 
       const compressed = await this.compress(
@@ -331,12 +303,57 @@ export default class SCameraCaptureController {
 
       compressed.name = `photo-${new Date().getTime()}.jpg`;
       this.blob = compressed;
+      SCamera.uiController.updatePhotoCounter();
 
       return compressed;
     } catch (error) {
-      console.error('Error capturing photo:', error);
+      console.error('Erro ao capturar foto:', error);
       throw error;
     }
+  }
+
+  drawRotatedImage(ctx, image, rotation, facingMode, width, height, crop) {
+    const isLandscape = SCamera.uiController?._autoRotate;
+
+    ctx.save();
+
+    if (!isLandscape && Math.abs(rotation) === 90) {
+      ctx.canvas.width = height;
+      ctx.canvas.height = width;
+    } else {
+      ctx.canvas.width = width;
+      ctx.canvas.height = height;
+    }
+
+    ctx.translate(ctx.canvas.width / 2, ctx.canvas.height / 2);
+
+    if (!isLandscape) {
+      const angle = -rotation * Math.PI / 180;
+      ctx.rotate(angle);
+    }
+
+    let scaleX = 1;
+    if (facingMode === 'user') {
+      scaleX = -1;
+    }
+    ctx.scale(scaleX, 1);
+
+    const sx = crop?.sx || 0;
+    const sy = crop?.sy || 0;
+    const sWidth = crop?.sWidth || width;
+    const sHeight = crop?.sHeight || height;
+
+    ctx.drawImage(
+      image,
+      sx, sy,
+      sWidth, sHeight,
+      -width / 2,
+      -height / 2,
+      width,
+      height
+    );
+
+    ctx.restore();
   }
 
   sendBlob() {
@@ -347,66 +364,41 @@ export default class SCameraCaptureController {
       composed: true
     }));
   }
-  
-  // Zoom virtual para WebView Android
-  // applyVirtualZoomToCanvas(ctx, canvas, width, height, zoomLevel) {
-  //   const scale = zoomLevel;
-  //   const scaledWidth = width / scale;
-  //   const scaledHeight = height / scale;
-  //   const offsetX = (width - scaledWidth) / 2;
-  //   const offsetY = (height - scaledHeight) / 2;
-  //   ctx.drawImage(canvas, offsetX, offsetY, scaledWidth, scaledHeight, 0, 0, width, height);
-  // }
-  // async setZoom(zoomLevel) {
-  //   this.currentZoom = zoomLevel;
-  //   const videoElement = document.querySelector('.camera-preview');
-  //   const container = document.querySelector('.viewfinder-container');
 
-  //   if (!videoElement) return;
+  async setZoom(zoomLevel) {
+    this.currentZoom = zoomLevel;
+    const videoElement = document.querySelector('.camera-preview');
+    const container = document.querySelector('.viewfinder-container');
 
-  //   // Tentar zoom óptico se suportado
-  //   if (this.capabilities?.zoom && !this.isAndroidWebView) {
-  //     try {
-  //       const track = this.currentStream?.getVideoTracks?.()[0];
-  //       await track.applyConstraints({ advanced: [{ zoom: zoomLevel }] });
-  //       return zoomLevel;
-  //     } catch (error) {
-  //       console.warn('Zoom óptico não pôde ser aplicado. Usando zoom virtual.', error);
-  //     }
-  //   }
+    if (!videoElement) return;
 
-  //   // Zoom virtual para WebView Android
-  //   videoElement.style.transformOrigin = 'center center';
-  //   videoElement.style.transform = `scale(${zoomLevel})`;
-
-  //   if (container) {
-  //     container.style.overflow = 'hidden';
-  //     container.style.position = 'relative';
-  //     container.style.width = '100vw';
-  //     container.style.height = '100vh';
-  //   }
-
-  //   return zoomLevel;
-  // }
-
-  async setZoom(zoomValue) {
-    if (!this.videoTrack || !this.capabilities?.zoom) {
-      console.log('Zoom not supported');
-      return this.currentZoom;
+    if (this.capabilities?.zoom && !this.isAndroidWebView) {
+      try {
+        const track = this.currentStream?.getVideoTracks?.()[0];
+        await track.applyConstraints({ advanced: [{ zoom: zoomLevel }] });
+        return zoomLevel;
+      } catch (error) {
+        console.warn('Zoom óptico não pôde ser aplicado. Usando zoom virtual.', error);
+      }
     }
 
-    const clampedZoom = Math.min(Math.max(zoomValue, this.capabilities.zoom.min), this.capabilities.zoom.max);
-    this.currentZoom = clampedZoom;
+    // Só aplica o estilo se for um zoom virtual
+    if (this.isAndroidWebView) {
+      if (container) {
+        container.style.overflow = 'hidden';
+        container.style.position = 'relative';
+        container.style.width = '100vw';
+        container.style.height = '100vh';
+      }
+      if (SCamera.currentConfig.facingMode == "user") {
+        videoElement.style.transform = `scaleX(-1) scale(${zoomLevel})`;
+      } else {
+        videoElement.style.transform = `scale(${zoomLevel})`;
+      }
+      videoElement.style.transformOrigin = 'center center';
+    }
 
-    return this.videoTrack.applyConstraints({
-      advanced: [{ zoom: clampedZoom }]
-    }).then(() => {
-      SCamera.currentConfig.zoom = clampedZoom;
-      return clampedZoom;
-    }).catch((error) => {
-      console.error('Error setting zoom:', error);
-      return this.currentZoom;
-    });
+    return zoomLevel;
   }
 
   toggleFlash(state) {
