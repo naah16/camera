@@ -35,11 +35,12 @@ export default class SCameraUIController {
     videoElement.muted = true;
     videoElement.poster = "/resources/img/black-pixel.png";
 
-    const cameras = SCamera.devices.cameras;
-    const facingMode = cameras.find(cam => cam.deviceId === SCamera.currentConfig.deviceId)?.label;
-
-    if (facingMode) {
-      SCamera.currentConfig.facingMode = facingMode.toLowerCase().includes('front') ? 'user' : 'environment';
+    if (SCamera.uiController.capabilities?.facingMode) {
+      let facing = SCamera.uiController.capabilities.facingMode;
+      if (Array.isArray(facing)) {
+        facing = facing[0];
+      }
+      SCamera.currentConfig.facingMode = String(facing).toLowerCase().includes('user') ? 'user' : 'environment';
     }
 
     console.log('facingMode:', SCamera.currentConfig.facingMode);
