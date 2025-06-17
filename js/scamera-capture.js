@@ -193,7 +193,17 @@ export default class SCameraCaptureController {
       return;
     }
 
-    // SCamera.currentConfig.facingMode = newCamera.label.toLowerCase().includes('front') ? 'user' : 'environment';
+    if (/front|frontal|user/i.test(newCamera.label)) {
+      SCamera.currentConfig.facingMode = "user";
+    } else {
+      SCamera.currentConfig.facingMode = "environment";
+    }
+
+    const videoElement = document.querySelector('.camera-preview');
+    if (videoElement) {
+      const isUser = SCamera.currentConfig.facingMode === "user";
+      videoElement.style.transform = isUser ? 'scaleX(-1)' : 'scaleX(1)';
+    }
 
     try {
       await this.getCameraStream({

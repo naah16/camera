@@ -1163,29 +1163,23 @@ export default class SCameraUIController {
 
   handleMotionChange(e) {
     const x = e.accelerationIncludingGravity.x;
-    let rotation = 0;
+    let rotation;
     let orientation;
     
     let newAutoRotate = this.isMobile && window.innerHeight < window.innerWidth;
     let hasAutoRotateChanged = newAutoRotate != this._autoRotate;
     this._autoRotate = newAutoRotate;
 
+    const isAndroid = navigator.userAgent.indexOf('Android') >= 0;
+
     if (x > 7) {
-      if (navigator.userAgent.indexOf('Android') >= 0){
-        rotation = 90; // Landscape Left
-      } else {
-        rotation = -90; // Landscape Right
-      }
+      rotation = isAndroid ? 90 : -90;
       orientation = 'landscape-left';
     } else if (x < -7) {
-      if (navigator.userAgent.indexOf('Android') >= 0){
-        rotation = -90;  // Landscape Right
-      } else {
-        rotation = 90; // Landscape Left
-      }
+      rotation = isAndroid ? -90 : 90;
       orientation = 'landscape-right';
     } else {
-      rotation = 0;   // Portrait
+      rotation = 0;
       orientation = 'portrait';
     }
 
