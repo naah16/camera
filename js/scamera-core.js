@@ -24,6 +24,7 @@ let SCamera = {
       await SCamera.uiController.setupOrientationListener();
       SCamera.uiController.init();
       await SCamera.captureController.init();
+      SCamera.uiController.updateFacingModeUI();
       SCamera.uiController.createZoomControl();
       SCamera.uiController.createFlashBtn();
       await SCamera.loadDevices();

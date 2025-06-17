@@ -35,16 +35,6 @@ export default class SCameraUIController {
     videoElement.muted = true;
     videoElement.poster = "/resources/img/black-pixel.png";
 
-    if (SCamera.uiController.capabilities?.facingMode) {
-      let facing = SCamera.uiController.capabilities.facingMode;
-      if (Array.isArray(facing)) {
-        facing = facing[0];
-      }
-      SCamera.currentConfig.facingMode = String(facing).toLowerCase().includes('user') ? 'user' : 'environment';
-    }
-
-    console.log('facingMode:', SCamera.currentConfig.facingMode);
-
     if (SCamera.currentConfig.facingMode == "user") {
       videoElement.style.transform = 'scaleX(-1)';
     } else {
@@ -65,6 +55,16 @@ export default class SCameraUIController {
     this.createLoadingScreen();
     if (this.previousPhotoBtn) {
       this.previousPhotoBtn.style.display = this.photos.length > 0 ? 'flex' : 'none';
+    }
+  }
+
+  updateFacingModeUI() {
+    const videoElement = document.querySelector('.camera-preview');
+    let facing = SCamera.captureController.capabilities?.facingMode;
+    if (Array.isArray(facing)) facing = facing[0];
+    SCamera.currentConfig.facingMode = String(facing).toLowerCase().includes('user') ? 'user' : 'environment';
+    if (videoElement) {
+      videoElement.style.transform = SCamera.currentConfig.facingMode === "user" ? 'scaleX(-1)' : 'scaleX(1)';
     }
   }
 

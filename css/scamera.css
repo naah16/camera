@@ -522,6 +522,7 @@ video::-webkit-media-controls-panel {
 }
 
 .previous-photo-btn {
+  cursor: pointer;
   height: 50px;
   width: 50px;
   display: flex;
@@ -529,6 +530,8 @@ video::-webkit-media-controls-panel {
   bottom: 180px;
   right: 20px;
   background-color: #57C279;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 /* Photo Preview Styles */
@@ -653,11 +656,13 @@ video::-webkit-media-controls-panel {
   border-radius: 15px;
   cursor: pointer;
   user-select: none;
+  -webkit-user-select: none;
 }
 
 .dialog-buttons > .confirm-discard {
   background-color: #d32f2f;
   user-select: none;
+  -webkit-user-select: none;
 }
 
 .dialog-buttons > .cancel-discard {
