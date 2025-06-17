@@ -882,12 +882,11 @@ export default class SCameraUIController {
           <path d="M9,3V4H4V6H5V19A2,2 0 0,0 7,21H17A2,2 0 0,0 19,19V6H20V4H15V3H9M7,6H17V19H7V6M9,8V17H11V8H9M13,8V17H15V8H13Z" />
         </svg>
       `;
-      // Só exibe o deleteOverlay se for a última foto tirada
-      deleteOverlay.style.display = (index === this.photos.length - 1) ? 'flex' : 'none';
+      deleteOverlay.style.display = (index === this.currentPhotoIndex) ? 'flex' : 'none';
 
       deleteOverlay.addEventListener('click', (e) => {
         e.stopPropagation();
-        this.deleteCurrentPhoto();
+        this.deleteCurrentPhoto(index);
       });
 
       thumbnail.appendChild(img);
@@ -914,7 +913,7 @@ export default class SCameraUIController {
     });
   }
 
-  deleteCurrentPhoto() {
+  deleteCurrentPhoto(index) {
     if (!this.dialogConfirmDelete) {
       this.dialogConfirmDelete = document.createElement('div');
       this.dialogConfirmDelete.className = 'dialog-confirm';
@@ -947,12 +946,12 @@ export default class SCameraUIController {
       backdrop.remove();
     };
 
-    document.querySelector('#confirm-discard-delete').addEventListener('click', () => {
-      if (this.currentPhotoIndex >= 0 && this.currentPhotoIndex < this.photos.length) {
-        URL.revokeObjectURL(this.mainPhoto.src);
-        this.photos.splice(this.currentPhotoIndex, 1);
+    document.querySelector('#confirm-discard-delete').onclick = () => {
+      if (index >= 0 && index < this.photos.length) {
+        URL.revokeObjectURL(URL.createObjectURL(this.photos[index]));
+        this.photos.splice(index, 1);
         this.updatePhotoCounter();
-        
+
         if (this.photos.length === 0) {
           // Se não tem mais fotos, volta para a câmera
           removeDialog();
@@ -965,11 +964,11 @@ export default class SCameraUIController {
           removeDialog();
         }
       }
-    });
+    };
 
-    document.querySelector('#cancel-discard-delete').addEventListener('click', () => {
+    document.querySelector('#cancel-discard-delete').onclick = () => {
       removeDialog();
-    });
+    };
   }
 
   discardAllPhotos() {
@@ -1005,7 +1004,7 @@ export default class SCameraUIController {
       backdrop.remove();
     };
 
-    document.querySelector('#confirm-discard-delete-all').addEventListener('click', () => {
+    document.querySelector('#confirm-discard-delete-all').onclick = () => {
       this.photos.forEach(photo => {
         if (photo instanceof Blob) {
           URL.revokeObjectURL(photo);
@@ -1017,11 +1016,11 @@ export default class SCameraUIController {
       this.hidePhotoPreview();
       this.updatePhotoCounter();
       removeDialog();
-    });
+    };
 
-    document.querySelector('#cancel-discard-delete-all').addEventListener('click', () => {
+    document.querySelector('#cancel-discard-delete-all').onclick = () => {
       removeDialog();
-    });
+    };
   }
 
   createPhotoActionsMobile() {
@@ -1045,11 +1044,8 @@ export default class SCameraUIController {
     </svg>
     <div>Confirmar</div>`;
     downloadBtn.addEventListener('click', () => {
-      // Envia todas as fotos
-      this.photos.forEach(photo => {
-        SCamera.captureController.blob = photo;
-        SCamera.sendBlob();
-      });
+      SCamera.captureController.blob = this.photos;
+      SCamera.sendBlob();
       // this.hidePhotoPreview();
     });
     
@@ -1080,11 +1076,8 @@ export default class SCameraUIController {
       </svg>
     `;
     downloadBtn.addEventListener('click', () => {
-      this.photos.forEach(photo => {
-        SCamera.captureController.blob = photo;
-        SCamera.sendBlob();
-      });
-      this.hidePhotoPreview();
+      SCamera.captureController.blob = this.photos;
+      SCamera.sendBlob();
     });
     
     actions.appendChild(closeBtn);

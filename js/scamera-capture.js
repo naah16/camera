@@ -287,7 +287,7 @@ export default class SCameraCaptureController {
 
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        draw(ctx, video, width, height);
+        draw(ctx, videoElement, width, height);
 
         photoBlob = await new Promise(resolve =>
           canvas.toBlob(resolve, 'image/jpeg', 1)
