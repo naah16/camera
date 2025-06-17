@@ -37,7 +37,7 @@ let SCamera = {
     await SCamera.listCameras();
     const devices = await navigator.mediaDevices.enumerateDevices();
     SCamera.devices.cameras = devices.filter(device => device.kind === 'videoinput');
-    // console.log('Cameras:', SCamera.devices.cameras);
+    console.log('Cameras:', SCamera.devices.cameras);
     
     if (SCamera.captureController.currentStream) {
       await SCamera.loadSupportedResolutions();

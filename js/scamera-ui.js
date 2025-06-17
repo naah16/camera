@@ -35,12 +35,21 @@ export default class SCameraUIController {
     videoElement.muted = true;
     videoElement.poster = "/resources/img/black-pixel.png";
 
+    const cameras = SCamera.devices.cameras;
+    const facingMode = cameras.find(cam => cam.deviceId === SCamera.currentConfig.deviceId)?.label;
+
+    if (facingMode) {
+      SCamera.currentConfig.facingMode = facingMode.toLowerCase().includes('front') ? 'user' : 'environment';
+    }
+
+    console.log('facingMode:', SCamera.currentConfig.facingMode);
+
     if (SCamera.currentConfig.facingMode == "user") {
       videoElement.style.transform = 'scaleX(-1)';
     } else {
       videoElement.style.transform = 'scaleX(1)';
     }
-    
+
     cameraContainer.appendChild(cameraBody);
     cameraBody.appendChild(viewfinderContainer);
     viewfinderContainer.appendChild(videoElement);
